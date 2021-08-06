@@ -511,11 +511,12 @@
   </div>
 </template>
 <script>
+//Documentação
+//https://www.creative-tim.com/learning-lab/tailwind/vue/overview/notus
 import AdminNavbar from "@/components/Navbars/AdminNavbar.vue";
 import HeaderStats from "@/components/Headers/HeaderStats.vue";
 import FooterAdmin from "@/components/Footers/FooterAdmin.vue";
 import CardSocialTraffic from "@/components/Cards/CardSocialTraffic.vue";
-
 export default {
   name: "app-banco",
   components: {
