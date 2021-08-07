@@ -6,7 +6,7 @@
       <div class="mx-auto w-full -mt-64">
         <div>
           <div class="flex flex-wrap">
-            <div class="md:w-5/12 mb-1 px-4">
+            <div class="md:w-4/12 mb-1 px-4">
               <div class="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
                 <div class="rounded-t mb-0 px-4 py-3 border-0">
                   <div class="flex flex-wrap items-center">
@@ -18,165 +18,212 @@
                   </div>
                 </div>
                 <div class="block w-full">
-                </div>
-              </div>
-            </div>
-            <div class="md:w-6/12 mb-1 xl:mb-0 px-4">
-              <div class="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
-                <div class="rounded-t mb-0 px-4 py-3 border-0">
-                  <div class="flex flex-wrap items-center">
-                    <div class="relative w-full px-4 max-w-full flex-grow flex-1">
-                      <h3 class="font-semibold text-base text-blueGray-700">
-                        Logs
-                      </h3>
+                  <div class="relative flex flex-col break-words bg-white rounded">
+                    <div class="flex-auto px-4 mb-3">
+                      <div class="flex flex-wrap">
+                        <div class="relative w-full pr-4 max-w-full flex-grow flex-1"><h5
+                            class="text-blueGray-400 uppercase font-bold text-xs">Saldo</h5><span
+                            class="font-semibold text-3xl text-blueGray-700">R$ 30,00</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="px-3">
+                    <h3 class="font-semibold text-base text-blueGray-700 mb-1">Valor</h3>
+                    <div class="relative flex w-full flex-wrap items-stretch mb-3">
+  <span
+      class="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
+    <i class="fas fa-money-bill"></i>
+  </span><input type="text"
+                v-model="operacao.valor"
+                placeholder="R$ 0,00"
+                class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10"/>
+                    </div>
+                  </div>
+                  <div class="px-3">
+                    <h3 class="font-semibold text-base text-blueGray-700 mb-1">Operação</h3>
+                    <select
+                        v-model="operacao.tipo"
+                        class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
+                      <option value="Depósito">Depósito</option>
+                      <option value="Saque">Saque</option>
+                    </select>
+                  </div>
+                  <div class="px-3 py-2">
+                    <div class="flex flex-wrap">
+                      <div class="md:w-6/12">
+                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Transação</h3>
+                        <select
+                            v-model="operacao.transacao"
+                            class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
+                          <option value="-1">Nova Transação</option>
+                          <option v-for="t in sel_transacao" :key="t" v-bind:value="t">T{{ t }}</option>
+                        </select>
+                      </div>
+                      <div class="md:w-6/12 text-right mt-2">
+                        <button
+                            @click="salvaOperacao()"
+                            class="bg-lightBlue-500 mt-5 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="px-3 py-2">
+                    <div class="flex flex-wrap">
+                      <div class="md:w-6/12">
+                        <button
+                            @click="saveDB()"
+                            class="bg-emerald-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Commit
+                        </button>
+                      </div>
+                      <div class="md:w-6/12 text-right">
+                        <button
+                            class="bg-emerald-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Checkpoint
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="px-3 py-1">
+                    <div class="flex flex-wrap">
+                      <div class="md:w-6/12">
+                        <button
+                            class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Abort
+                        </button>
+                      </div>
+                      <div class="md:w-6/12 text-right">
+                        <button
+                            class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Restart
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div class="block w-full overflow-x-auto">
-                  <!-- Projects table -->
-                  <table class="items-center w-full bg-transparent border-collapse">
-                    <thead>
-                    <tr>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Page name
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Visitors
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Unique users
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Bounce rate
-                      </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        4,569
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        340
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-up text-emerald-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/index.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        3,985
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        319
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-orange-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/charts.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        3,513
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        294
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-orange-500 mr-4"></i>
-                        36,49%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/tables.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        2,050
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        147
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-up text-emerald-500 mr-4"></i>
-                        50,87%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/profile.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        1,795
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        190
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-red-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    </tbody>
-                  </table>
+              </div>
+            </div>
+            <div class="md:w-8/12 mb-1 xl:mb-0 px-4">
+              <div class="flex flex-wrap">
+                <div class="md:w-8/12 mb-1 px-4">
+                  <div class="relative flex flex-col min-w-0 break-words bg-white mb-6 shadow-lg rounded">
+                    <div class="rounded-t mb-0 px-4 py-3 border-0">
+                      <div class="flex flex-wrap items-center">
+                        <div class="relative w-full px-4 max-w-full flex-grow flex-1">
+                          <h3 class="font-semibold text-base text-blueGray-700">
+                            Logs
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+                    <table class="table bg-transparent border-collapse">
+                      <thead>
+                      <tr>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          TID
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          Tempo
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          Operação
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          Objeto
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          Antes
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          Depois
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          pAnt
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          pProx
+                        </th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr v-for="l in logs" :key="l.codigo">
+                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          T{{ l.tid }}
+                        </th>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          {{ l.tempo }}
+                        </td>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          {{ l.operacao }}
+                        </td>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          {{ l.objeto }}
+                        </td>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          {{ l.antes }}
+                        </td>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          {{ l.depois }}
+                        </td>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          {{ l.pAnt }}
+                        </td>
+                        <td class=" border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          {{ l.pProx }}
+                        </td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="md:w-4/12 mb-1 xl:mb-0 px-4">
+                  <div class="relative flex flex-col min-w-0 break-words bg-white mb-6 shadow-lg rounded">
+                    <div class="rounded-t mb-0 px-4 py-3 border-0">
+                      <div class="flex flex-wrap items-center">
+                        <div class="relative w-full px-4 max-w-full flex-grow flex-1">
+                          <h3 class="font-semibold text-base text-blueGray-700">
+                            Transações
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+                    <table class="table bg-transparent border-collapse">
+                      <thead>
+                      <tr>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          TID
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          Status
+                        </th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr>
+                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          T1
+                        </th>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          START
+                        </td>
+                      </tr>
+                      <tr>
+                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          T1
+                        </th>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          UPDATE
+                        </td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -188,157 +235,50 @@
                   <div class="flex flex-wrap items-center">
                     <div class="relative w-full px-4 max-w-full flex-grow flex-1">
                       <h3 class="font-semibold text-base text-blueGray-700">
-                        Transações
+                        Cache
                       </h3>
                     </div>
                   </div>
                 </div>
-                <div class="block w-full overflow-x-auto">
-                  <!-- Projects table -->
-                  <table class="items-center w-full bg-transparent border-collapse">
-                    <thead>
-                    <tr>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Page name
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Visitors
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Unique users
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Bounce rate
-                      </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        4,569
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        340
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-up text-emerald-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/index.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        3,985
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        319
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-orange-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/charts.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        3,513
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        294
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-orange-500 mr-4"></i>
-                        36,49%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/tables.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        2,050
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        147
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-up text-emerald-500 mr-4"></i>
-                        50,87%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/profile.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        1,795
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        190
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-red-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <table class="table bg-transparent border-collapse">
+                  <thead>
+                  <tr>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Partição
+                    </th>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Dirty Bit
+                    </th>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Valor Item
+                    </th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      T1
+                    </th>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      START
+                    </td>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      30
+                    </td>
+                  </tr>
+                  <tr>
+                    <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      T1
+                    </th>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      UPDATE
+                    </td>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      20
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
             <div class="md:w-6/12 mb-1 xl:mb-0 px-4">
@@ -347,165 +287,93 @@
                   <div class="flex flex-wrap items-center">
                     <div class="relative w-full px-4 max-w-full flex-grow flex-1">
                       <h3 class="font-semibold text-base text-blueGray-700">
-                        Cache
+                        Diretório da Cache
                       </h3>
                     </div>
                   </div>
                 </div>
-                <div class="block w-full overflow-x-auto">
-                  <!-- Projects table -->
-                  <table class="items-center w-full bg-transparent border-collapse">
-                    <thead>
-                    <tr>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Page name
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Visitors
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Unique users
-                      </th>
-                      <th
-                          class="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left"
-                      >
-                        Bounce rate
-                      </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        4,569
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        340
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-up text-emerald-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/index.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        3,985
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        319
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-orange-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/charts.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        3,513
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        294
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-orange-500 mr-4"></i>
-                        36,49%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/tables.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        2,050
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        147
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-up text-emerald-500 mr-4"></i>
-                        50,87%
-                      </td>
-                    </tr>
-                    <tr>
-                      <th
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left"
-                      >
-                        /argon/profile.html
-                      </th>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        1,795
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        190
-                      </td>
-                      <td
-                          class="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                      >
-                        <i class="fas fa-arrow-down text-red-500 mr-4"></i>
-                        46,53%
-                      </td>
-                    </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <table class="table bg-transparent border-collapse">
+                  <thead>
+                  <tr>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Nome Item
+                    </th>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Partição
+                    </th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      T1
+                    </th>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      START
+                    </td>
+                  </tr>
+                  <tr>
+                    <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      T1
+                    </th>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      UPDATE
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-            <div class="w-full xl:w-4/12 px-4">
-              <card-social-traffic/>
+            <div class="md:w-6/12 mb-1 xl:mb-0 px-4">
+              <div class="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
+                <div class="rounded-t mb-0 px-4 py-3 border-0">
+                  <div class="flex flex-wrap items-center">
+                    <div class="relative w-full px-4 max-w-full flex-grow flex-1">
+                      <h3 class="font-semibold text-base text-blueGray-700">
+                        Disco
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+                <table class="table bg-transparent border-collapse">
+                  <thead>
+                  <tr>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Código
+                    </th>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Operação
+                    </th>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Valor
+                    </th>
+                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                      Tempo
+                    </th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr v-for="b in banco" :key="b.codigo">
+                    <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      1
+                    </th>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      {{ b.op }}
+                    </td>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      {{ b.valor }}
+                    </td>
+                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                      {{ b.tempo }}
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+          <footer-admin/>
         </div>
-        <footer-admin/>
       </div>
     </div>
   </div>
@@ -515,15 +383,104 @@
 //https://www.creative-tim.com/learning-lab/tailwind/vue/overview/notus
 import AdminNavbar from "@/components/Navbars/AdminNavbar.vue";
 import HeaderStats from "@/components/Headers/HeaderStats.vue";
-import FooterAdmin from "@/components/Footers/FooterAdmin.vue";
-import CardSocialTraffic from "@/components/Cards/CardSocialTraffic.vue";
+import {save_banco, t_insert, t_start} from "../controller/controller";
+import {createDB, getToken} from "../model/model";
+import FooterAdmin from "../components/Footers/FooterAdmin";
+
 export default {
   name: "app-banco",
   components: {
-    AdminNavbar,
-    HeaderStats,
     FooterAdmin,
-    CardSocialTraffic,
+    AdminNavbar,
+    HeaderStats
   },
+  data() {
+    return {
+      tipo: 1,
+      saldo: 0.00,
+      operacao: {
+        valor: 0.00,
+        tipo: "Depósito",
+        transacao: -1,
+      },
+      sel_transacao: [],
+      logs: [],
+      transacoes: [],
+      cache: [],
+      banco: []
+    };
+  },
+  created() {
+    createDB();
+    this.getDB();
+  },
+  computed: {},
+  watch: {
+    logs: {
+      handler: function (val) {
+        let aux_array = [];
+        val.forEach(function (v) {
+          aux_array.push(v.tid);
+        });
+        this.sel_transacao = [...new Set(aux_array)];
+      },
+      deep: true
+    },
+  },
+  methods: {
+    salvaOperacao() {
+      if (this.operacao.transacao < 1) {
+        this.operacao.transacao = this.novaTransacao();
+      }
+      if (this.tipo === 1) {
+        this.saveLog();
+      }
+    },
+    novaTransacao() {
+      if (this.sel_transacao.length < 1) {
+        return 1;
+      }
+      const ut = this.sel_transacao[this.sel_transacao.length - 1]
+      return ut + 1;
+    },
+    saveLog() {
+      this.logs.push(t_start(this.operacao));
+      this.logs.push(t_insert(this.operacao));
+    },
+    getDB() {
+      this.banco = JSON.parse(getToken());
+      console.log(this.banco);
+    },
+    saveDB() {
+      let t_op = [];
+      let trans = parseInt(this.operacao.transacao);
+      this.logs.forEach(function (v) {
+        if (v.operacao === 'INSERT' && v.tid === trans) {
+          t_op.push(v)
+        }
+      });
+      save_banco(this.operacao.transacao, t_op);
+      this.getDB();
+    },
+    saveCheckpoint() {
+      let t_arr = [];
+      this.logs.forEach(function (v) {
+        if (v.operacao === 'INSERT') {
+          t_arr.push(v.tid)
+        }
+      });
+      console.log([...new Set(t_arr)])
+      console.log(this.logs)
+    },
+    resetLogs() {
+      this.logs = [];
+    },
+    resetTransacoes() {
+      this.transacoes = [];
+    },
+    resetCache() {
+      this.cache = [];
+    },
+  }
 };
 </script>

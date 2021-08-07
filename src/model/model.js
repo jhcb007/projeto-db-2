@@ -1,17 +1,22 @@
-const debug = process.env.NODE_ENV !== 'production';
+import Cookies from 'js-cookie'
 
-export function undo() {
-    return debug;
+const TokenKey = 'DB-Token';
+
+export function createDB() {
+    let db = getToken();
+    if (!db) {
+        setToken(JSON.stringify([]));
+    }
 }
 
-export function redo(data) {
-    return data;
+export function getToken() {
+    return Cookies.get(TokenKey)
 }
 
-export function no_undo() {
-    return debug;
+export function setToken(token) {
+    return Cookies.set(TokenKey, token, {expires: 180})
 }
 
-export function no_redo(data) {
-    return data;
+export function removeToken() {
+    return Cookies.remove(TokenKey)
 }

@@ -21,7 +21,12 @@
     "core-js": "3.9.1",
     "gulp": "4.0.2",
     "gulp-append-prepend": "1.0.8",
+    "js-cookie": "^2.2.1",
+    "moment": "^2.24.0",
     "tailwindcss": "2.0.4",
+    "text-mask-addons": "^3.8.0",
+    "uuid": "^8.3.2",
+    "v-mask": "^2.2.3",
     "vue": "3.0.7",
     "vue-router": "4.0.5"
   },
