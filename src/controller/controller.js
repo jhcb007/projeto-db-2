@@ -27,9 +27,44 @@ export function t_insert(valor) {
         tipo: valor.tipo,
         valor: valor.valor,
         antes: "",
-        depois: "NEWV",
+        depois: valor.tipo + ', ' + valor.valor,
         pAnt: 0,
         pProx: 0
+    }
+}
+
+export function t_commit(valor) {
+    return {
+        codigo: uuidv4(),
+        tid: valor.transacao,
+        tempo: tempo(),
+        operacao: "COMMIT",
+        objeto: "",
+        tipo: "",
+        valor: "",
+        antes: "",
+        depois: "",
+        pAnt: 0,
+        pProx: 0
+    }
+}
+
+export function t_checkep(valor) {
+    valor = valor.map(function (num) {
+        return 'T' + num;
+    });
+    return {
+        codigo: uuidv4(),
+        tid: "",
+        tempo: tempo(),
+        operacao: "CHECKP",
+        objeto: valor.join(', '),
+        tipo: "",
+        valor: "",
+        antes: "",
+        depois: "",
+        pAnt: "",
+        pProx: ""
     }
 }
 
