@@ -1,8 +1,14 @@
 <template>
   <div>
     <div class="relative bg-blueGray-100">
-      <admin-navbar/>
-      <header-stats/>
+      <div class="relative bg-red-700 pb-64 pt-12">
+        <div class="px-4 md:px-10 mx-auto w-full">
+          <div>
+            <div class="flex flex-wrap">
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="mx-auto w-full -mt-64">
         <div>
           <div class="flex flex-wrap">
@@ -17,69 +23,88 @@
                     </div>
                   </div>
                 </div>
-                <div class="block w-full">
-                  <div class="relative flex flex-col break-words bg-white rounded">
-                    <div class="flex-auto px-4 mb-3">
-                      <div class="flex flex-wrap">
-                        <div class="relative w-full pr-4 max-w-full flex-grow flex-1"><h5
-                            class="text-blueGray-400 uppercase font-bold text-xs">Tipo</h5></div>
-                            <select
-                                v-model="tipo"
+                <div class="block w-full mb-2">
+                  <div class="px-3 mb-4">
+                    <div class="flex flex-wrap">
+                      <h3 class="font-semibold text-base text-blueGray-700 mb-1">Tipo</h3>
+                      <select v-model="tipo"
+                              class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
+                        <option value="Adiada">Adiada</option>
+                        <option value="Imediata_redo">Imediata UNDO/REDO</option>
+                        <option value="Imediata_noredo">Imediata UNDO/NO-REDO</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="px-3">
+                    <div class="flex flex-wrap">
+                      <div class="md:w-6/12">
+                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Objeto</h3>
+                        <select v-model="operacao.objeto"
                                 class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                              <option value="Adiada ">Adiada</option>
-                              <option value="Imediata_redo">Imediata UNDO/REDO</option>
-                              <option value="Imediata_noredo">Imediata UNDO/NO-REDO</option>
-                            </select>
-                        <div class="relative w-full pr-4 max-w-full flex-grow flex-1"><h5
-                            class="text-blueGray-400 uppercase font-bold text-xs">Saldo</h5><span
-                            class="font-semibold text-3xl text-blueGray-700">R$ 30,00</span></div>
+                          <option v-for="o in list_objetos" :key="o" v-bind:value="o">{{ o }}</option>
+                        </select>
+                      </div>
+                      <div class="md:w-6/12 pl-4 ">
+                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Valor</h3>
+                        <div class="relative flex w-full flex-wrap items-stretch mb-3">
+  <span
+      class="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
+  </span><input type="number"
+                min="1"
+                v-model="operacao.valor"
+                class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10"/>
+                        </div>
                       </div>
                     </div>
                   </div>
                   <div class="px-3">
-                    <h3 class="font-semibold text-base text-blueGray-700 mb-1">Valor</h3>
-                    <div class="relative flex w-full flex-wrap items-stretch mb-3">
-  <span
-      class="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
-    <i class="fas fa-money-bill"></i>
-  </span><input type="text"
-                v-model="operacao.valor"
-                placeholder="R$ 0,00"
-                class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10"/>
-                    </div>
-                  </div>
-                  <div class="px-3">
-                    <h3 class="font-semibold text-base text-blueGray-700 mb-1">Operação</h3>
-                    <select
-                        v-model="operacao.tipo"
-                        class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                      <option value="Depósito">Depósito</option>
-                      <option value="Saque">Saque</option>
-                    </select>
-                  </div>
-                  <div class="px-3 py-2">
                     <div class="flex flex-wrap">
                       <div class="md:w-6/12">
+                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Operação</h3>
+                        <select v-model="operacao.tipo"
+                                class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
+                          <option value="write_item">Write</option>
+                          <option value="READ">Read</option>
+                        </select>
+                      </div>
+                      <div class="md:w-6/12 pl-4">
                         <h3 v-show="sel_transacao && sel_transacao.length > 0"
                             class="font-semibold text-base text-blueGray-700 mb-1">Transação</h3>
                         <select
                             v-show="sel_transacao && sel_transacao.length > 0"
                             v-model="operacao.transacao"
                             class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                          <option value="-1">Nova Transação</option>
+                          <option value="-1">NEW</option>
                           <option v-for="t in sel_transacao" :key="t" v-bind:value="t">T{{ t }}</option>
                         </select>
                       </div>
-                      <div class="md:w-6/12 text-right mt-2">
+                    </div>
+                  </div>
+                  <div class="px-3 mt-3">
+                    <div class="flex flex-wrap">
+                      <div class="md:w-6/12 ">
                         <button
-                            @click="salvaOperacao()"
-                            class="bg-lightBlue-500 mt-5 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            v-show="(sel_transacao && sel_transacao.length > 0) && tipo !=='Adiada'"
+                            @click="finalizar()"
+                            class="bg-indigo-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
-                          Salvar
+                          Finalizar
+                        </button>
+                      </div>
+                      <div class="md:w-6/12 text-right">
+                        <button
+                            @click="executar()"
+                            v-show="operacao.transacao"
+                            class="bg-lightBlue-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Executar
                         </button>
                       </div>
                     </div>
                   </div>
+                </div>
+                <hr>
+                <div class="block w-full">
                   <div class="px-3 py-2">
                     <div class="flex flex-wrap">
                       <div class="md:w-6/12">
@@ -100,16 +125,24 @@
                       </div>
                     </div>
                   </div>
+                  <hr class="py-1">
                   <div class="px-3 py-1">
                     <div class="flex flex-wrap">
-                      <div class="md:w-6/12">
+                      <div class="md:w-4/12">
                         <button
                             class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
                           Abort
                         </button>
                       </div>
-                      <div class="md:w-6/12 text-right">
+                      <div class="md:w-4/12">
+                        <button
+                            class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Falha
+                        </button>
+                      </div>
+                      <div class="md:w-4/12 text-right">
                         <button
                             class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
@@ -129,7 +162,7 @@
                       <div class="flex flex-wrap items-center">
                         <div class="relative w-full px-4 max-w-full flex-grow flex-1">
                           <h3 class="font-semibold text-base text-blueGray-700">
-                            Logs
+                            Logs da Memória
                           </h3>
                         </div>
                       </div>
@@ -155,12 +188,6 @@
                         <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
                           Depois
                         </th>
-                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          pAnt
-                        </th>
-                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          pProx
-                        </th>
                       </tr>
                       </thead>
                       <tbody>
@@ -183,24 +210,84 @@
                         <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
                           {{ l.depois }}
                         </td>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          {{ l.pAnt }}
-                        </td>
-                        <td class=" border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          {{ l.pProx }}
-                        </td>
                       </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
                 <div class="md:w-4/12 mb-1 xl:mb-0 px-2">
-                  <div class="relative flex flex-col min-w-0 break-words bg-white mb-6 shadow-lg rounded">
+                  <div class="relative flex flex-col min-w-0 break-words bg-white mb-2 shadow-lg rounded">
                     <div class="rounded-t mb-0 px-4 py-3 border-0">
                       <div class="flex flex-wrap items-center">
                         <div class="relative w-full px-4 max-w-full flex-grow flex-1">
                           <h3 class="font-semibold text-base text-blueGray-700">
-                            Transações
+                            Transações Ativas
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+                    <table class="table bg-transparent border-collapse">
+                      <thead>
+                      <tr>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          TID
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          Tempo
+                        </th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr v-for="t in transacoes_ativas" :key="t.tid">
+                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          <span v-show="t.tid">T{{ t.tid }}</span>
+                        </th>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          <span v-show="t.tempo">{{ t.tempo }}</span>
+                        </td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="relative flex flex-col min-w-0 break-words bg-white mb-2 shadow-lg rounded">
+                    <div class="rounded-t mb-0 px-4 py-3 border-0">
+                      <div class="flex flex-wrap items-center">
+                        <div class="relative w-full px-4 max-w-full flex-grow flex-1">
+                          <h3 class="font-semibold text-base text-blueGray-700">
+                            Transações Consolidadas
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+                    <table class="table bg-transparent border-collapse">
+                      <thead>
+                      <tr>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          TID
+                        </th>
+                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
+                          Tempo
+                        </th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr v-for="t in transacoes_consolidadas" :key="t.tid">
+                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          <span v-show="t.tid">T{{ t.tid }}</span>
+                        </th>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          <span v-show="t.tempo">{{ t.tempo }}</span>
+                        </td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="relative flex flex-col min-w-0 break-words bg-white mb-2 shadow-lg rounded">
+                    <div class="rounded-t mb-0 px-4 py-3 border-0">
+                      <div class="flex flex-wrap items-center">
+                        <div class="relative w-full px-4 max-w-full flex-grow flex-1">
+                          <h3 class="font-semibold text-base text-blueGray-700">
+                            Transações Abortadas
                           </h3>
                         </div>
                       </div>
@@ -217,20 +304,12 @@
                       </tr>
                       </thead>
                       <tbody>
-                      <tr>
+                      <tr v-for="t in transacoes_abortadas" :key="t.tid">
                         <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          T1
+                          <span v-show="t.tid">T{{ t.tid }}</span>
                         </th>
                         <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          START
-                        </td>
-                      </tr>
-                      <tr>
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          T1
-                        </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          UPDATE
+                          <span v-show="t.tempo">{{ t.tempo }}</span>
                         </td>
                       </tr>
                       </tbody>
@@ -258,37 +337,20 @@
                       <thead>
                       <tr>
                         <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          Partição
+                          Objeto
                         </th>
                         <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          Dirty Bit
-                        </th>
-                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          Valor Item
+                          Valor
                         </th>
                       </tr>
                       </thead>
                       <tbody>
-                      <tr>
+                      <tr v-for="c in cache" :key="c.tid">
                         <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          T1
+                          <span v-show="c.tid">{{ c.tid }}</span>
                         </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          START
-                        </td>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          30
-                        </td>
-                      </tr>
-                      <tr>
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          T1
-                        </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          UPDATE
-                        </td>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          20
+                        <td class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          <span v-show="c.tid">{{ c.tid }}</span>
                         </td>
                       </tr>
                       </tbody>
@@ -301,7 +363,7 @@
                       <div class="flex flex-wrap items-center">
                         <div class="relative w-full px-4 max-w-full flex-grow flex-1">
                           <h3 class="font-semibold text-base text-blueGray-700">
-                            Diretório da Cache
+                            Log do Disco
                           </h3>
                         </div>
                       </div>
@@ -310,29 +372,14 @@
                       <thead>
                       <tr>
                         <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          Nome Item
-                        </th>
-                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          Partição
                         </th>
                       </tr>
                       </thead>
                       <tbody>
-                      <tr>
+                      <tr v-for="l in log_disco" :key="l.codigo">
                         <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          T1
+                          <span v-show="l.texto">{{ l.texto }}</span>
                         </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          START
-                        </td>
-                      </tr>
-                      <tr>
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          T1
-                        </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          UPDATE
-                        </td>
                       </tr>
                       </tbody>
                     </table>
@@ -346,7 +393,7 @@
                   <div class="flex flex-wrap items-center">
                     <div class="relative w-full px-4 max-w-full flex-grow flex-1">
                       <h3 class="font-semibold text-base text-blueGray-700">
-                        Disco
+                        Banco de Dados
                       </h3>
                     </div>
                   </div>
@@ -355,32 +402,20 @@
                   <thead>
                   <tr>
                     <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                      Código
-                    </th>
-                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                      Operação
+                      Objeto
                     </th>
                     <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
                       Valor
-                    </th>
-                    <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                      Tempo
                     </th>
                   </tr>
                   </thead>
                   <tbody>
                   <tr v-for="b in banco" :key="b.codigo">
                     <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                      1
+                      {{ b.op }}
                     </th>
                     <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                      {{ b.op }}
-                    </td>
-                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
                       {{ b.valor }}
-                    </td>
-                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                      {{ b.tempo }}
                     </td>
                   </tr>
                   </tbody>
@@ -388,114 +423,95 @@
               </div>
             </div>
           </div>
-          <footer-admin/>
+          <footer class="block py-40">
+            <div class="container mx-auto px-4">
+              <hr class="mb-4 border-b-1 border-blueGray-200"/>
+              <div class="flex flex-wrap items-center md:justify-between justify-center">
+                <div class="w-full md:w-4/12 px-4">
+                  <div class="text-sm text-blueGray-500 font-semibold py-1 text-center md:text-left">
+                    IN0940 (BD) / 2021-1
+                    <a href="https://github.com/jhcb007/projeto-db-2"
+                       class="text-blueGray-500 hover:text-blueGray-700 text-sm font-semibold py-1">
+                      GitHub
+                    </a>
+                  </div>
+                </div>
+                <div class="w-full md:w-8/12 px-4"></div>
+              </div>
+            </div>
+          </footer>
         </div>
       </div>
     </div>
   </div>
 </template>
 <script>
-//Documentação
-//https://www.creative-tim.com/learning-lab/tailwind/vue/overview/notus
-import AdminNavbar from "@/components/Navbars/AdminNavbar.vue";
-import HeaderStats from "@/components/Headers/HeaderStats.vue";
 import {save_banco, t_checkep, t_commit, t_insert, t_start} from "../controller/controller";
-import {createDB, getToken} from "../model/model";
-import FooterAdmin from "../components/Footers/FooterAdmin";
+import {createDB, getToken, objetos} from "../model/model";
+import {tempo} from "../util";
 
 export default {
   name: "app-banco",
-  components: {
-    FooterAdmin,
-    AdminNavbar,
-    HeaderStats
-  },
+  components: {},
   data() {
     return {
-      tipo: "Imediata",
-      saldo: 0.00,
+      tipo: "Adiada",
+      list_objetos: [],
       operacao: {
-        valor: 0.00,
-        tipo: "Depósito",
+        valor: 1,
+        tipo: "write_item",
+        objeto: "A",
         transacao: -1,
       },
       sel_transacao: [],
       logs: [],
+      transacoes_ativas: [],
+      transacoes_consolidadas: [],
+      transacoes_abortadas: [],
       transacoes: [],
       cache: [],
+      log_disco: [],
       banco: []
     };
   },
   created() {
     createDB();
     this.getDB();
+    this.populaObjetos();
   },
   computed: {},
-  watch: {
-    logs: {
-      handler: function (val) {
-        let aux_array = [];
-        let t_commit = [];
-        val.forEach(function (v) {
-          if (v.operacao === 'COMMIT') {
-            t_commit.push(v.tid)
-          }
-        });
-        val.forEach(function (v) {
-          aux_array.push(v.tid);
-        });
-        let aux_R = [...new Set(aux_array)];
-        t_commit.forEach(function (c) {
-          aux_R.splice(aux_R.findIndex(r => r === c), 1)
-        });
-        this.sel_transacao = aux_R;
-        if (this.sel_transacao && this.sel_transacao.length > 0) {
-          this.operacao.transacao = this.sel_transacao[0];
-        } else {
-          this.operacao.transacao = -1;
-        }
-      },
-      deep: true
-    },
-  },
+  watch: {},
   methods: {
-    salvaOperacao() {
+    executar() {
       if (this.operacao.transacao < 1) {
         this.operacao.transacao = this.novaTransacao();
       }
-      if (this.tipo === 1) {
-        this.saveLog();
-      }
+      this.saveLog();
+      this.atualizaTransacoes();
     },
-    novaTransacao() {
-      if (this.sel_transacao.length < 1) {
-        return 1;
-      }
-      const ut = this.sel_transacao[this.sel_transacao.length - 1]
-      return ut + 1;
-    },
-    removeTransacao(transacao) {
-      return this.sel_transacao.filter(function (el) {
-        return el !== transacao;
-      });
+    finalizar() {
+      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao);
+      this.atualizaTransacoes();
+      this.setTransacaoConsolidadas(this.operacao);
+      this.operacao.transacao = -1;
     },
     commit() {
       let t_op = [];
       let trans = parseInt(this.operacao.transacao);
       this.logs.forEach(function (v) {
-        if (v.operacao === 'INSERT' && v.tid === trans) {
+        if (v.operacao === 'write_item' && v.tid === trans) {
           t_op.push(v)
         }
       });
       if (t_op.length < 1) {
         return
       }
-      this.logs.push(t_commit(this.operacao));
-      this.sel_transacao = this.removeTransacao(this.operacao.transacao);
-    },
-    saveLog() {
-      this.logs.push(t_start(this.operacao));
-      this.logs.push(t_insert(this.operacao));
+      console.log(t_op);
+      const op = t_insert(t_op[t_op.length - 1]);
+      this.log_disco.push(op)
+      this.log_disco.push(t_commit(this.operacao))
+      this.saveDB(op);
+      this.finalizar();
     },
     saveCheckpoint() {
       const trans = this.sel_transacao;
@@ -504,11 +520,78 @@ export default {
       }
       this.logs.push(t_checkep(this.sel_transacao));
     },
+    saveLog() {
+      const ja_ativa = this.transacoes_ativas.filter(t => t.tid === parseInt(this.operacao.transacao));
+      if (ja_ativa.length < 1) {
+        const start = t_start(this.operacao);
+        this.logs.push(start);
+        this.setTransacaoAtivas(start);
+        //Adiada
+        this.log_disco.push(start)
+      }
+      const old = this.retornaValorAnterior(this.operacao);
+      const insert = t_insert(this.operacao, old);
+      this.logs.push(insert);
+    },
+    novaTransacao() {
+      if (this.transacoes_ativas.length < 1 && this.transacoes_consolidadas < 1) {
+        return 1;
+      } else {
+        return this.retornaMaiorTransacao() + 1;
+      }
+    },
+    atualizaTransacoes() {
+      let t = [];
+      this.transacoes_ativas.forEach(function (v) {
+        t.push(v.tid);
+      });
+      this.sel_transacao = t;
+    },
+    setTransacaoAtivas(operacao) {
+      const d = {tid: operacao.tid, tempo: operacao.tempo}
+      this.transacoes_ativas.push(d);
+    },
+    removeTransacaoAtivas(transacao) {
+      return this.transacoes_ativas.filter(function (el) {
+        return el.tid !== transacao;
+      });
+    },
+    setTransacaoConsolidadas(operacao) {
+      const d = {tid: operacao.transacao, tempo: tempo()}
+      this.transacoes_consolidadas.push(d);
+    },
+    retornaMaiorTransacao() {
+      let maior = 1;
+      //verificar as demais transacoes
+      this.transacoes_ativas.forEach(function (v) {
+        if (v.tid > maior) {
+          maior = v.tid;
+        }
+      });
+      this.transacoes_consolidadas.forEach(function (v) {
+        if (v.tid > maior) {
+          maior = v.tid;
+        }
+      });
+      return maior;
+    },
+    retornaValorAnterior(p) {
+      let old = "";
+      this.logs.forEach(function (v) {
+        if (v.operacao !== 'start_transaction' && v.tid === p.transacao && v.objeto === p.objeto) {
+          old = v.valor;
+        }
+      });
+      return old;
+    },
+    populaObjetos() {
+      this.list_objetos = objetos();
+    },
     getDB() {
       this.banco = JSON.parse(getToken());
     },
     saveDB(t_op) {
-      save_banco(this.operacao.transacao, t_op);
+      save_banco(t_op);
       this.getDB();
     },
     resetLogs() {
