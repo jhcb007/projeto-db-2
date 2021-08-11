@@ -23,16 +23,16 @@ export function removeToken() {
 
 export function objetos() {
     return [
-        'A',
-        'B',
-        'C',
-        'D',
-        'E',
-        'F',
-        'G',
-        'H',
-        'I',
-        'J',
-        'K',
+        {item: 'A', transacao: 0, ativa: false},
+        {item: 'B', transacao: 0, ativa: false},
+        {item: 'C', transacao: 0, ativa: false},
+        {item: 'D', transacao: 0, ativa: false},
+        {item: 'E', transacao: 0, ativa: false},
+        {item: 'F', transacao: 0, ativa: false},
+        {item: 'G', transacao: 0, ativa: false},
+        {item: 'H', transacao: 0, ativa: false},
+        {item: 'I', transacao: 0, ativa: false},
+        {item: 'J', transacao: 0, ativa: false},
+        {item: 'K', transacao: 0, ativa: false},
     ]
 }

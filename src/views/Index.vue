@@ -24,7 +24,7 @@
                   </div>
                 </div>
                 <div class="block w-full mb-2">
-                  <div class="px-3 mb-4">
+                  <div class="px-3 mb-2">
                     <div class="flex flex-wrap">
                       <h3 class="font-semibold text-base text-blueGray-700 mb-1">Tipo</h3>
                       <select v-model="tipo"
@@ -33,28 +33,6 @@
                         <option value="Imediata_redo">Imediata UNDO/REDO</option>
                         <option value="Imediata_noredo">Imediata UNDO/NO-REDO</option>
                       </select>
-                    </div>
-                  </div>
-                  <div class="px-3">
-                    <div class="flex flex-wrap">
-                      <div class="md:w-6/12">
-                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Objeto</h3>
-                        <select v-model="operacao.objeto"
-                                class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                          <option v-for="o in list_objetos" :key="o" v-bind:value="o">{{ o }}</option>
-                        </select>
-                      </div>
-                      <div class="md:w-6/12 pl-4 ">
-                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Valor</h3>
-                        <div class="relative flex w-full flex-wrap items-stretch mb-3">
-  <span
-      class="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
-  </span><input type="number"
-                min="1"
-                v-model="operacao.valor"
-                class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10"/>
-                        </div>
-                      </div>
                     </div>
                   </div>
                   <div class="px-3">
@@ -73,10 +51,36 @@
                         <select
                             v-show="sel_transacao && sel_transacao.length > 0"
                             v-model="operacao.transacao"
+                            @change="selTransacao()"
                             class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                          <option value="-1">NEW</option>
+                          <option value="-1">Nova</option>
                           <option v-for="t in sel_transacao" :key="t" v-bind:value="t">T{{ t }}</option>
                         </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="px-3 mt-2">
+                    <div class="flex flex-wrap">
+                      <div class="md:w-6/12">
+                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Objeto</h3>
+                        <select v-model="operacao.objeto"
+                                v-bind:disabled="operacao.objeto.ativa"
+                                class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
+                          <option v-for="o in list_objetos" v-bind:disabled="o.ativa" :key="o" v-bind:value="o">
+                            {{ o.item }}
+                          </option>
+                        </select>
+                      </div>
+                      <div class="md:w-6/12 pl-4 ">
+                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Valor</h3>
+                        <div class="relative flex w-full flex-wrap items-stretch mb-3">
+  <span
+      class="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
+    </span><input type="number"
+                  min="1"
+                  v-model="operacao.valor"
+                  class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10"/>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -347,10 +351,10 @@
                       <tbody>
                       <tr v-for="c in cache" :key="c.tid">
                         <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="c.tid">{{ c.tid }}</span>
+                          <span v-show="c.ob">{{ c.ob }}</span>
                         </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="c.tid">{{ c.tid }}</span>
+                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          <span v-show="c.valor">{{ c.valor }}</span>
                         </td>
                       </tr>
                       </tbody>
@@ -377,7 +381,7 @@
                       </thead>
                       <tbody>
                       <tr v-for="l in log_disco" :key="l.codigo">
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                        <th class="border border-solid border-blueGray-300 border-t-0 text-left align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
                           <span v-show="l.texto">{{ l.texto }}</span>
                         </th>
                       </tr>
@@ -446,7 +450,7 @@
   </div>
 </template>
 <script>
-import {save_banco, t_checkep, t_commit, t_insert, t_start} from "../controller/controller";
+import {save_banco, t_checkep, t_commit, t_insert, t_log_disco, t_start} from "../controller/controller";
 import {createDB, getToken, objetos} from "../model/model";
 import {tempo} from "../util";
 
@@ -460,7 +464,7 @@ export default {
       operacao: {
         valor: 1,
         tipo: "write_item",
-        objeto: "A",
+        objeto: {item: "A", transacao: 0, ativa: false},
         transacao: -1,
       },
       sel_transacao: [],
@@ -488,6 +492,7 @@ export default {
       }
       this.saveLog();
       this.atualizaTransacoes();
+      this.objetoTransacao();
     },
     finalizar() {
       this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao);
@@ -506,19 +511,16 @@ export default {
       if (t_op.length < 1) {
         return
       }
-      console.log(t_op);
-      const op = t_insert(t_op[t_op.length - 1]);
+      const op = t_log_disco(t_op[t_op.length - 1]);
       this.log_disco.push(op)
       this.log_disco.push(t_commit(this.operacao))
-      this.saveDB(op);
       this.finalizar();
-    },
-    saveCheckpoint() {
-      const trans = this.sel_transacao;
-      if (trans.length < 1) {
-        return
-      }
-      this.logs.push(t_checkep(this.sel_transacao));
+      this.operacao.objeto = this.list_objetos.find(el => !el.ativa);
+      const i = this.list_objetos.map(function (l) {
+        return l.item;
+      }).indexOf(op.objeto);
+      this.list_objetos[i].transacao = 0;
+      this.list_objetos[i].ativa = false;
     },
     saveLog() {
       const ja_ativa = this.transacoes_ativas.filter(t => t.tid === parseInt(this.operacao.transacao));
@@ -532,6 +534,30 @@ export default {
       const old = this.retornaValorAnterior(this.operacao);
       const insert = t_insert(this.operacao, old);
       this.logs.push(insert);
+      this.setCache(insert);
+    },
+    saveCheckpoint() {
+      const commits = this.log_disco.filter(l => l.operacao === 'commit');
+      this.saveDB();
+      this.log_disco.push(t_checkep(commits));
+    },
+    selTransacao() {
+      const i = this.list_objetos.map(function (l) {
+        return l.transacao;
+      }).indexOf(parseInt(this.operacao.transacao));
+      if (i < 0) {
+        this.operacao.objeto = this.list_objetos.find(el => !el.ativa);
+      } else {
+        this.operacao.objeto = this.list_objetos[i];
+      }
+    },
+    objetoTransacao() {
+      const i = this.list_objetos.map(function (l) {
+        return l.item;
+      }).indexOf(this.operacao.objeto.item);
+      this.list_objetos[i].transacao = this.operacao.transacao;
+      this.list_objetos[i].ativa = true;
+      this.operacao.objeto = this.list_objetos[i];
     },
     novaTransacao() {
       if (this.transacoes_ativas.length < 1 && this.transacoes_consolidadas < 1) {
@@ -546,6 +572,17 @@ export default {
         t.push(v.tid);
       });
       this.sel_transacao = t;
+    },
+    setCache(operacao) {
+      const obj = {ob: operacao.objeto, valor: operacao.depois}
+      const ja_existe = this.cache.map(function (c) {
+        return c.ob;
+      }).indexOf(operacao.objeto);
+      if (ja_existe < 0) {
+        this.cache.push(obj);
+      } else {
+        this.cache[ja_existe] = obj;
+      }
     },
     setTransacaoAtivas(operacao) {
       const d = {tid: operacao.tid, tempo: operacao.tempo}
@@ -590,8 +627,11 @@ export default {
     getDB() {
       this.banco = JSON.parse(getToken());
     },
-    saveDB(t_op) {
-      save_banco(t_op);
+    saveDB() {
+      const w = this.log_disco.filter(l => l.operacao === 'write_item');
+      w.forEach(function (v) {
+        save_banco(v);
+      });
       this.getDB();
     },
     resetLogs() {
