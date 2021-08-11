@@ -56,8 +56,7 @@ export function t_commit(valor) {
     }
 }
 
-//Quando fazer o cheponk pegar todas as transacoes com commit e gravar no banco
-//Adicionar no log a tag chepont com as transacoes com commit
+
 export function t_checkep(commit) {
     let trans = [];
     commit.forEach(function (c) {
