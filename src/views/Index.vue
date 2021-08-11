@@ -111,7 +111,7 @@
                 <div class="block w-full">
                   <div class="px-3 py-2">
                     <div class="flex flex-wrap">
-                      <div class="md:w-6/12">
+                      <div class="md:w-4/12">
                         <button
                             @click="commit()"
                             class="bg-emerald-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
@@ -119,7 +119,16 @@
                           Commit
                         </button>
                       </div>
-                      <div class="md:w-6/12 text-right">
+                      <div class="md:w-4/12">
+                        <button
+                            v-show="tipo =='Imediata_redo'"                         
+                            @click="estouro()"
+                            class="bg-emerald-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Mem
+                        </button>
+                      </div>
+                      <div class="md:w-4/12 text-right">
                         <button
                             @click="saveCheckpoint()"
                             class="bg-emerald-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
@@ -522,6 +531,11 @@ export default {
       this.list_objetos[i].transacao = 0;
       this.list_objetos[i].ativa = false;
     },
+    estouro() {
+      const commits = this.log_disco.filter(l => l.operacao === 'commit');
+      this.saveDB();
+      this.log_disco.push(t_checkep(commits));
+    },
     saveLog() {
       const ja_ativa = this.transacoes_ativas.filter(t => t.tid === parseInt(this.operacao.transacao));
       if (ja_ativa.length < 1) {
@@ -534,6 +548,20 @@ export default {
       const old = this.retornaValorAnterior(this.operacao);
       const insert = t_insert(this.operacao, old);
       this.logs.push(insert);
+      if (this.tipo == 'Imediata_redo'){
+        let t_op = [];
+        let trans = parseInt(this.operacao.transacao);
+        this.logs.forEach(function (v) {
+          if (v.operacao === 'write_item' && v.tid === trans) {
+            t_op.push(v)
+          }
+        });
+        if (t_op.length < 1) {
+          return
+        }
+        const op = t_log_disco(t_op[t_op.length - 1]);
+        this.log_disco.push(op)
+      }
       this.setCache(insert);
     },
     saveCheckpoint() {
