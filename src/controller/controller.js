@@ -46,6 +46,20 @@ export function t_log_disco(valor, old = "") {
     }
 }
 
+export function t_log_disco_imediata(valor, old = "") {
+    return {
+        codigo: uuidv4(),
+        tid: valor.tid,
+        operacao: valor.tipo,
+        objeto: valor.objeto,
+        tipo: valor.tipo,
+        valor: valor.valor,
+        antes: old,
+        depois: valor.valor,
+        texto: "   " + valor.tipo + ", T" + valor.tid + ", " + valor.objeto + ", " + valor.antes + ", " + valor.valor
+    }
+}
+
 export function t_commit(valor) {
     return {
         codigo: uuidv4(),

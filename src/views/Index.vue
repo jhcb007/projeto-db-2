@@ -459,7 +459,7 @@
   </div>
 </template>
 <script>
-import {save_banco, t_checkep, t_commit, t_insert, t_log_disco, t_start} from "../controller/controller";
+import {save_banco, t_checkep, t_commit, t_insert, t_log_disco, t_log_disco_imediata, t_start} from "../controller/controller";
 import {createDB, getToken, objetos} from "../model/model";
 import {tempo} from "../util";
 
@@ -549,18 +549,19 @@ export default {
       const insert = t_insert(this.operacao, old);
       this.logs.push(insert);
       if (this.tipo == 'Imediata_redo'){
-        let t_op = [];
-        let trans = parseInt(this.operacao.transacao);
-        this.logs.forEach(function (v) {
-          if (v.operacao === 'write_item' && v.tid === trans) {
-            t_op.push(v)
-          }
-        });
-        if (t_op.length < 1) {
-          return
-        }
-        const op = t_log_disco(t_op[t_op.length - 1]);
-        this.log_disco.push(op)
+        // let t_op = [];
+        // let trans = parseInt(this.operacao.transacao);
+        // this.logs.forEach(function (v) {
+        //   if (v.operacao === 'write_item' && v.tid === trans) {
+        //     t_op.push(v)
+        //   }
+        // });
+        // if (t_op.length < 1) {
+        //   return
+        // }
+        // const op = t_log_disco(t_op[t_op.length - 1]);
+        const insert_disco = t_log_disco_imediata(this.logs[this.logs.length - 1], old);
+        this.log_disco.push(insert_disco)
       }
       this.setCache(insert);
     },
@@ -642,8 +643,12 @@ export default {
     },
     retornaValorAnterior(p) {
       let old = "";
-      this.logs.forEach(function (v) {
-        if (v.operacao !== 'start_transaction' && v.tid === p.transacao && v.objeto === p.objeto) {
+      //this.logs.forEach(function (v) {
+        // if (v.operacao !== 'start_transaction' && v.tid === p.transacao && v.objeto === p.objeto) {
+        //   old = v.valor;
+        // }
+      this.cache.forEach(function (v) {
+        if (v.ob  === p.objeto.item) {
           old = v.valor;
         }
       });
