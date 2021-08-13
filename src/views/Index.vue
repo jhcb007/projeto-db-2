@@ -37,8 +37,8 @@
                       <select v-model="tipo"
                               class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
                         <option value="Adiada">Adiada</option>
-                        <option value="Imediata_redo">Imediata UNDO/REDO</option>
-                        <option value="Imediata_noredo">Imediata UNDO/NO-REDO</option>
+                        <option disabled value="Imediata_redo">Imediata UNDO/REDO</option>
+                        <option disabled value="Imediata_noredo">Imediata UNDO/NO-REDO</option>
                       </select>
                     </div>
                   </div>
