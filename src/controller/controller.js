@@ -5,23 +5,55 @@ import {getToken, setToken} from "../model/model";
 export function t_start(valor) {
     return {
         codigo: uuidv4(),
-        tid: valor.transacao,
+        tid: valor.transacao.tid,
         tempo: tempo(),
         operacao: "start_transaction",
         objeto: "",
         antes: "",
         depois: "",
-        valor: "T" + valor.transacao,
+        valor: "T" + valor.transacao.tid,
         pAnt: 0,
         pProx: 0,
-        texto: "start_transaction, T" + valor.transacao
+        texto: "start_transaction, T" + valor.transacao.tid
+    }
+}
+
+export function t_end(valor) {
+    return {
+        codigo: uuidv4(),
+        tid: valor.transacao.tid,
+        tempo: tempo(),
+        operacao: "end_transaction",
+        objeto: "",
+        antes: "",
+        depois: "",
+        valor: "T" + valor.transacao.tid,
+        pAnt: 0,
+        pProx: 0,
+        texto: "end_transaction, T" + valor.transacao.tid
+    }
+}
+
+export function t_abort(valor) {
+    return {
+        codigo: uuidv4(),
+        tid: valor.transacao.tid,
+        tempo: tempo(),
+        operacao: "abort_transaction",
+        objeto: "",
+        antes: "",
+        depois: "",
+        valor: "T" + valor.transacao.tid,
+        pAnt: 0,
+        pProx: 0,
+        texto: "abort_transaction, T" + valor.transacao.tid
     }
 }
 
 export function t_insert(valor, old = "") {
     return {
         codigo: uuidv4(),
-        tid: valor.transacao,
+        tid: valor.transacao.tid,
         tempo: tempo(),
         operacao: valor.tipo,
         objeto: valor.objeto.item,
@@ -49,13 +81,12 @@ export function t_log_disco(valor, old = "") {
 export function t_commit(valor) {
     return {
         codigo: uuidv4(),
-        tid: valor.transacao,
+        tid: valor.transacao.tid,
         operacao: "commit",
-        valor: "T" + valor.transacao,
-        texto: "commit, T" + valor.transacao,
+        valor: "T" + valor.transacao.tid,
+        texto: "commit, T" + valor.transacao.tid,
     }
 }
-
 
 export function t_checkep(commit) {
     let trans = [];
@@ -78,36 +109,10 @@ export function save_banco(v) {
         return db.op;
     }).indexOf(v.objeto);
     if (achou < 0) {
-        dadosdb.push({op: v.objeto, valor: v.valor});
+        dadosdb.push({codigo: uuidv4(), op: v.objeto, valor: v.valor});
     } else {
         dadosdb[achou].valor = v.valor;
+        dadosdb[achou].codigo = uuidv4();
     }
     setToken(JSON.stringify(dadosdb))
 }
-
-/*
-logs: {
-    handler: function (val) {
-        let aux_array = [];
-        let t_commit = [];
-        val.forEach(function (v) {
-            if (v.operacao === 'COMMIT') {
-                t_commit.push(v.tid)
-            }
-        });
-        val.forEach(function (v) {
-            aux_array.push(v.tid);
-        });
-        let aux_R = [...new Set(aux_array)];
-        t_commit.forEach(function (c) {
-            aux_R.splice(aux_R.findIndex(r => r === c), 1)
-        });
-        this.sel_transacao = aux_R;
-        if (this.sel_transacao && this.sel_transacao.length > 0) {
-            this.operacao.transacao = this.sel_transacao[0];
-        } else {
-            this.operacao.transacao = -1;
-        }
-    },
-    deep: true
-},*/

@@ -21,6 +21,13 @@
                         Operações
                       </h3>
                     </div>
+                    <div class="relative w-full px-4 max-w-full flex-grow flex-1">
+                      <h3 class="font-semibold text-base text-blueGray-700 mb-1">Segundos</h3>
+                      <div class="relative flex w-full flex-wrap items-stretch">
+                        <input type="number" min="1" v-model="segundos"
+                               class="placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10"/>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="block w-full mb-2">
@@ -42,19 +49,18 @@
                         <select v-model="operacao.tipo"
                                 class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
                           <option value="write_item">Write</option>
-                          <option value="READ">Read</option>
+                          <option value="read_item">Read</option>
                         </select>
                       </div>
                       <div class="md:w-6/12 pl-4">
-                        <h3 v-show="sel_transacao && sel_transacao.length > 0"
-                            class="font-semibold text-base text-blueGray-700 mb-1">Transação</h3>
-                        <select
-                            v-show="sel_transacao && sel_transacao.length > 0"
-                            v-model="operacao.transacao"
-                            @change="selTransacao()"
-                            class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                          <option value="-1">Nova</option>
-                          <option v-for="t in sel_transacao" :key="t" v-bind:value="t">T{{ t }}</option>
+                        <h3 class="font-semibold text-base text-blueGray-700 mb-1">Transação</h3>
+                        <select v-model="operacao.transacao"
+                                @change="selTransacao()"
+                                class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
+                          <option value="">Nova</option>
+                          <option v-for="t in sel_transacao" :key="t" v-bind:value="t">
+                            T{{ t.tid }}
+                          </option>
                         </select>
                       </div>
                     </div>
@@ -74,12 +80,11 @@
                       <div class="md:w-6/12 pl-4 ">
                         <h3 class="font-semibold text-base text-blueGray-700 mb-1">Valor</h3>
                         <div class="relative flex w-full flex-wrap items-stretch mb-3">
-  <span
-      class="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
-    </span><input type="number"
-                  min="1"
-                  v-model="operacao.valor"
-                  class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10"/>
+                      <span
+                          class="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
+                      </span>
+                          <input type="number" min="1" v-model="operacao.valor"
+                                 class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10"/>
                         </div>
                       </div>
                     </div>
@@ -88,8 +93,9 @@
                     <div class="flex flex-wrap">
                       <div class="md:w-6/12 ">
                         <button
-                            v-show="(sel_transacao && sel_transacao.length > 0) && tipo !=='Adiada'"
+                            v-show="(sel_transacao && sel_transacao.length > 0) && operacao.transacao"
                             @click="finalizar()"
+                            v-bind:disabled="!operacao.transacao.ativa || bloqueio.finalizar"
                             class="bg-indigo-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
                           Finalizar
@@ -98,7 +104,7 @@
                       <div class="md:w-6/12 text-right">
                         <button
                             @click="executar()"
-                            v-show="operacao.transacao"
+                            v-bind:disabled="bloqueio.executar"
                             class="bg-lightBlue-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
                           Executar
@@ -114,6 +120,7 @@
                       <div class="md:w-6/12">
                         <button
                             @click="commit()"
+                            v-bind:disabled="bloqueio.commit"
                             class="bg-emerald-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
                           Commit
@@ -122,6 +129,7 @@
                       <div class="md:w-6/12 text-right">
                         <button
                             @click="saveCheckpoint()"
+                            v-bind:disabled="bloqueio.checkpoint"
                             class="bg-emerald-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
                           Checkpoint
@@ -132,25 +140,22 @@
                   <hr class="py-1">
                   <div class="px-3 py-1">
                     <div class="flex flex-wrap">
-                      <div class="md:w-4/12">
+                      <div class="md:w-6/12">
                         <button
+                            v-bind:disabled="bloqueio.abort"
+                            @click="AbortaTransacao()"
                             class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
                           Abort
                         </button>
                       </div>
-                      <div class="md:w-4/12">
+                      <div class="md:w-6/12 text-right">
                         <button
+                            @click="falha()"
+                            v-bind:disabled="bloqueio.falha"
                             class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
                           Falha
-                        </button>
-                      </div>
-                      <div class="md:w-4/12 text-right">
-                        <button
-                            class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-                            type="button">
-                          Restart
                         </button>
                       </div>
                     </div>
@@ -187,10 +192,7 @@
                           Objeto
                         </th>
                         <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          Antes
-                        </th>
-                        <th class="bg-blueGray-200 border border-solid border-blueGray-200 border-l-0 border-r-0 text-xs">
-                          Depois
+                          Valor
                         </th>
                       </tr>
                       </thead>
@@ -207,9 +209,6 @@
                         </td>
                         <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
                           {{ l.objeto }}
-                        </td>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          {{ l.antes }}
                         </td>
                         <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
                           {{ l.depois }}
@@ -241,16 +240,17 @@
                         </th>
                       </tr>
                       </thead>
-                      <tbody>
-                      <tr v-for="t in transacoes_ativas" :key="t.tid">
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="t.tid">T{{ t.tid }}</span>
-                        </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="t.tempo">{{ t.tempo }}</span>
-                        </td>
-                      </tr>
-                      </tbody>
+                      <transition-group :duration="500" enter-active-class="show_td" leave-active-class="end_td"
+                                        tag="tbody">
+                        <tr v-for="t in transacoes_ativas" :key="t.tid+'ta'">
+                          <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="t.tid">T{{ t.tid }}</span>
+                          </th>
+                          <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="t.tempo">{{ t.tempo }}</span>
+                          </td>
+                        </tr>
+                      </transition-group>
                     </table>
                   </div>
                   <div class="relative flex flex-col min-w-0 break-words bg-white mb-2 shadow-lg rounded">
@@ -274,16 +274,17 @@
                         </th>
                       </tr>
                       </thead>
-                      <tbody>
-                      <tr v-for="t in transacoes_consolidadas" :key="t.tid">
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="t.tid">T{{ t.tid }}</span>
-                        </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="t.tempo">{{ t.tempo }}</span>
-                        </td>
-                      </tr>
-                      </tbody>
+                      <transition-group :duration="500" enter-active-class="show_td" leave-active-class="end_td"
+                                        tag="tbody">
+                        <tr v-for="t in transacoes_consolidadas" :key="t.tid+'tc'">
+                          <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="t.tid">T{{ t.tid }}</span>
+                          </th>
+                          <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="t.tempo">{{ t.tempo }}</span>
+                          </td>
+                        </tr>
+                      </transition-group>
                     </table>
                   </div>
                   <div class="relative flex flex-col min-w-0 break-words bg-white mb-2 shadow-lg rounded">
@@ -307,16 +308,17 @@
                         </th>
                       </tr>
                       </thead>
-                      <tbody>
-                      <tr v-for="t in transacoes_abortadas" :key="t.tid">
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="t.tid">T{{ t.tid }}</span>
-                        </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="t.tempo">{{ t.tempo }}</span>
-                        </td>
-                      </tr>
-                      </tbody>
+                      <transition-group :duration="500" enter-active-class="show_td" leave-active-class="end_td"
+                                        tag="tbody">
+                        <tr v-for="t in transacoes_abortadas" :key="t.tid+'to'">
+                          <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="t.tid">T{{ t.tid }}</span>
+                          </th>
+                          <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="t.tempo">{{ t.tempo }}</span>
+                          </td>
+                        </tr>
+                      </transition-group>
                     </table>
                   </div>
                 </div>
@@ -348,16 +350,17 @@
                         </th>
                       </tr>
                       </thead>
-                      <tbody>
-                      <tr v-for="c in cache" :key="c.tid">
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="c.ob">{{ c.ob }}</span>
-                        </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="c.valor">{{ c.valor }}</span>
-                        </td>
-                      </tr>
-                      </tbody>
+                      <transition-group :duration="500" enter-active-class="show_td" leave-active-class="end_td"
+                                        tag="tbody">
+                        <tr v-for="c in cache" :key="c.tid+'c'">
+                          <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="c.objeto">{{ c.objeto }}</span>
+                          </th>
+                          <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="c.valor">{{ c.valor }}</span>
+                          </td>
+                        </tr>
+                      </transition-group>
                     </table>
                   </div>
                 </div>
@@ -379,13 +382,13 @@
                         </th>
                       </tr>
                       </thead>
-                      <tbody>
-                      <tr v-for="l in log_disco" :key="l.codigo">
-                        <th class="border border-solid border-blueGray-300 border-t-0 text-left align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="l.texto">{{ l.texto }}</span>
-                        </th>
-                      </tr>
-                      </tbody>
+                      <transition-group :duration="500" enter-active-class="show_td" tag="tbody">
+                        <tr v-for="l in log_disco" :key="l.codigo+'d'">
+                          <th class="border border-solid border-blueGray-300 border-t-0 text-left align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="l.texto">{{ l.texto }}</span>
+                          </th>
+                        </tr>
+                      </transition-group>
                     </table>
                   </div>
                 </div>
@@ -413,16 +416,17 @@
                     </th>
                   </tr>
                   </thead>
-                  <tbody>
-                  <tr v-for="b in banco" :key="b.codigo">
-                    <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                      {{ b.op }}
-                    </th>
-                    <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                      {{ b.valor }}
-                    </td>
-                  </tr>
-                  </tbody>
+                  <transition-group :duration="500" enter-active-class="show_td" leave-active-class="end_td"
+                                    tag="tbody">
+                    <tr v-for="b in banco" :key="b.codigo+'db'">
+                      <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                        {{ b.op }}
+                      </th>
+                      <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                        {{ b.valor }}
+                      </td>
+                    </tr>
+                  </transition-group>
                 </table>
               </div>
             </div>
@@ -450,7 +454,16 @@
   </div>
 </template>
 <script>
-import {save_banco, t_checkep, t_commit, t_insert, t_log_disco, t_start} from "../controller/controller";
+import {
+  save_banco,
+  t_abort,
+  t_checkep,
+  t_commit,
+  t_end,
+  t_insert,
+  t_log_disco,
+  t_start
+} from "../controller/controller";
 import {createDB, getToken, objetos} from "../model/model";
 import {tempo} from "../util";
 
@@ -459,13 +472,25 @@ export default {
   components: {},
   data() {
     return {
+      segundos: 1,
       tipo: "Adiada",
       list_objetos: [],
       operacao: {
         valor: 1,
-        tipo: "write_item",
-        objeto: {item: "A", transacao: 0, ativa: false},
-        transacao: -1,
+        tipo: "read_item",
+        objeto: {item: "A", transacao: 0, ativa: false, valor: null},
+        transacao: "",
+      },
+      bloqueio: {
+        executar: false,
+        finalizar: false,
+        commit: false,
+        checkpoint: false,
+        abort: false,
+        falha: false
+      },
+      ultima_transacao: {
+        valor: 0
       },
       sel_transacao: [],
       logs: [],
@@ -475,7 +500,10 @@ export default {
       transacoes: [],
       cache: [],
       log_disco: [],
-      banco: []
+      banco: [],
+      checkpoint_realizados: [],
+      transacoes_refeitas: [],
+      timeouts: []
     };
   },
   created() {
@@ -487,64 +515,221 @@ export default {
   watch: {},
   methods: {
     executar() {
-      if (this.operacao.transacao < 1) {
-        this.operacao.transacao = this.novaTransacao();
+      if (this.operacao.transacao === '') {
+        if (this.ultima_transacao.valor > 0) {
+          this.operacao.transacao = this.geraTransacao();
+        } else {
+          this.operacao.transacao = this.initTransacao();
+        }
       }
-      this.saveLog();
+      if (this.operacao.transacao.ativa === false) {
+        return;
+      }
+      if (this.operacao.tipo === 'write_item') {
+        this.write();
+      } else {
+        this.read();
+      }
+    },
+    read() {
+      this.bloqueio.finalizar = true;
+      this.bloqueio.executar = true;
+
+      this.startTransacao();
       this.atualizaTransacoes();
       this.objetoTransacao();
+      this.selTransacao();
+
+      const tem_chache = this.cache.map(function (c) {
+        return c.objeto;
+      }).indexOf(this.operacao.objeto.item);
+      if (tem_chache < 0) {
+        const start = t_start(this.operacao);
+        this.timeouts.push(setTimeout(() => {
+          this.log_disco.push(start);
+        }, (1000 * parseInt(this.segundos))));
+
+        const tem_banco = this.banco.map(function (b) {
+          return b.op;
+        }).indexOf(this.operacao.objeto.item);
+
+        if (tem_banco < 0) {
+          alert("Objeto não cadastrado no banco de dados")
+          this.AbortaTransacao();
+        } else {
+          const dado = this.banco[tem_banco];
+          const obj = {
+            tid: this.operacao.objeto.transacao,
+            tipo: "read_item",
+            objeto: dado.op,
+            valor: dado.valor,
+          }
+          const op = t_log_disco(obj);
+          this.timeouts.push(setTimeout(() => {
+            this.log_disco.push(op);
+          }, (2000 * parseInt(this.segundos))));
+
+          this.timeouts.push(setTimeout(() => {
+            this.log_disco.push(t_end(this.operacao))
+          }, (3000 * parseInt(this.segundos))));
+          this.timeouts.push(setTimeout(() => {
+            this.setCache(op);
+          }, (4000 * parseInt(this.segundos))));
+
+          const old = this.retornaValorAnterior(this.operacao);
+
+          const new_valor = this.operacao;
+
+          this.timeouts.push(setTimeout(() => {
+            new_valor.valor = op.valor;
+            const insert = t_insert(new_valor, old);
+            this.logs.push(insert);
+            this.bloqueio.finalizar = false;
+            this.bloqueio.executar = false;
+          }, (5000 * parseInt(this.segundos))));
+
+        }
+
+      } else {
+        const cache = this.cache[tem_chache];
+        const old = this.retornaValorAnterior(this.operacao);
+        const new_valor = this.operacao;
+        new_valor.valor = cache.valor;
+        const insert = t_insert(new_valor, old);
+        this.logs.push(insert);
+        this.bloqueio.finalizar = false;
+        this.bloqueio.executar = false;
+      }
+
+    },
+    write() {
+      this.startTransacao();
+      const old = this.retornaValorAnterior(this.operacao);
+      const insert = t_insert(this.operacao, old);
+      this.logs.push(insert);
+      this.atualizaTransacoes();
+      this.objetoTransacao();
+      this.selTransacao();
     },
     finalizar() {
-      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao);
-      this.atualizaTransacoes();
-      this.setTransacaoConsolidadas(this.operacao);
-      this.operacao.transacao = -1;
-    },
-    commit() {
-      let t_op = [];
-      let trans = parseInt(this.operacao.transacao);
-      this.logs.forEach(function (v) {
-        if (v.operacao === 'write_item' && v.tid === trans) {
-          t_op.push(v)
-        }
-      });
-      if (t_op.length < 1) {
-        return
+      if (this.operacao.transacao.ativa === false) {
+        return;
       }
-      const op = t_log_disco(t_op[t_op.length - 1]);
-      this.log_disco.push(op)
-      this.log_disco.push(t_commit(this.operacao))
-      this.finalizar();
-      this.operacao.objeto = this.list_objetos.find(el => !el.ativa);
-      const i = this.list_objetos.map(function (l) {
-        return l.item;
-      }).indexOf(op.objeto);
-      this.list_objetos[i].transacao = 0;
-      this.list_objetos[i].ativa = false;
+      const ultima = this.logs[this.logs.length - 1];
+      if (ultima) {
+        if (ultima.operacao === 'end_transaction' && ultima.tid === this.operacao.transacao.tid) {
+          return
+        }
+      }
+      const end = t_end(this.operacao);
+      this.logs.push(end);
+
+      if (this.operacao.tipo === 'write_item') {
+        const t_op = this.listTransacoesCommit();
+        const op = t_log_disco(t_op[t_op.length - 1]);
+        this.timeouts.push(setTimeout(() => {
+          this.setCache(op);
+        }, (1000 * parseInt(this.segundos))));
+      }
+
+      this.descartaTransacao(end.tid);
+      this.selTransacao();
+
+      if (this.operacao.tipo === 'read_item') {
+        this.removeTransacao(end.tid);
+        const i = this.list_objetos.map(function (l) {
+          return l.item;
+        }).indexOf(this.operacao.objeto.item);
+        this.list_objetos[i].transacao = 0;
+        this.list_objetos[i].ativa = false;
+        this.consolidaTransacao();
+      }
+
     },
-    saveLog() {
-      const ja_ativa = this.transacoes_ativas.filter(t => t.tid === parseInt(this.operacao.transacao));
+    startTransacao() {
+      const ja_ativa = this.transacoes_ativas.filter(t => t.tid === parseInt(this.operacao.transacao.tid));
       if (ja_ativa.length < 1) {
         const start = t_start(this.operacao);
         this.logs.push(start);
         this.setTransacaoAtivas(start);
-        //Adiada
-        this.log_disco.push(start)
       }
-      const old = this.retornaValorAnterior(this.operacao);
-      const insert = t_insert(this.operacao, old);
-      this.logs.push(insert);
-      this.setCache(insert);
+    },
+    commit() {
+      if (this.bloqueio.commit) {
+        return;
+      }
+      if (this.verificaTransacaoFinalizada()) {
+        return;
+      }
+      const t_op = this.listTransacoesCommit();
+      if (t_op.length < 1) {
+        return
+      }
+      this.bloqueio.commit = true;
+      this.bloqueio.checkpoint = true;
+
+      const op = t_log_disco(t_op[t_op.length - 1]);
+
+      const start = t_start(this.operacao);
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(start)
+      }, (1000 * parseInt(this.segundos))));
+
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(op)
+      }, (2000 * parseInt(this.segundos))));
+
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(t_end(this.operacao))
+      }, (3000 * parseInt(this.segundos))));
+
+      const commit = t_commit(this.operacao);
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(commit)
+        this.removeTransacao(commit.tid);
+        this.operacao.objeto = this.list_objetos.find(el => !el.ativa);
+        const i = this.list_objetos.map(function (l) {
+          return l.item;
+        }).indexOf(op.objeto);
+        this.list_objetos[i].transacao = 0;
+        this.list_objetos[i].ativa = false;
+      }, (4000 * parseInt(this.segundos))));
+
+      this.timeouts.push(setTimeout(() => {
+        this.consolidaTransacao();
+        this.bloqueio.commit = false;
+        this.bloqueio.checkpoint = false;
+      }, (5000 * parseInt(this.segundos))));
+
     },
     saveCheckpoint() {
-      const commits = this.log_disco.filter(l => l.operacao === 'commit');
-      this.saveDB();
-      this.log_disco.push(t_checkep(commits));
+      let commits = this.log_disco.filter(l => l.operacao === 'commit');
+      if (commits.length < 1) {
+        return
+      }
+      const checkpoints = this.log_disco.filter(l => l.operacao === 'checkpoint');
+      checkpoints.forEach(function (c) {
+        c.objeto.forEach(function (t) {
+          const i = commits.map(function (l) {
+            return l.valor;
+          }).indexOf(t);
+          commits.splice(i, 1);
+        })
+      });
+      if (commits.length < 1) {
+        return
+      }
+      this.timeouts.push(setTimeout(() => {
+        this.saveDB(commits);
+      }, (1000 * parseInt(this.segundos))));
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(t_checkep(commits));
+      }, (2000 * parseInt(this.segundos))));
     },
     selTransacao() {
       const i = this.list_objetos.map(function (l) {
         return l.transacao;
-      }).indexOf(parseInt(this.operacao.transacao));
+      }).indexOf(parseInt(this.operacao.transacao.tid));
       if (i < 0) {
         this.operacao.objeto = this.list_objetos.find(el => !el.ativa);
       } else {
@@ -555,34 +740,51 @@ export default {
       const i = this.list_objetos.map(function (l) {
         return l.item;
       }).indexOf(this.operacao.objeto.item);
-      this.list_objetos[i].transacao = this.operacao.transacao;
+      this.list_objetos[i].transacao = this.operacao.transacao.tid;
       this.list_objetos[i].ativa = true;
       this.operacao.objeto = this.list_objetos[i];
     },
-    novaTransacao() {
-      if (this.transacoes_ativas.length < 1 && this.transacoes_consolidadas < 1) {
-        return 1;
+    atualizaTransacoes() {
+      if (this.sel_transacao.length < 1) {
+        let t = null;
+        if (this.ultima_transacao.valor > 0) {
+          t = {tid: this.ultima_transacao.valor, ativa: true, abort: false};
+        } else {
+          t = this.initTransacao();
+        }
+        this.sel_transacao.push(t);
+        if (t.tid === 1) {
+          this.ultima_transacao.valor = 1;
+        }
       } else {
-        return this.retornaMaiorTransacao() + 1;
+        const ja_existe = this.sel_transacao.map(function (c) {
+          return c.tid;
+        }).indexOf(this.operacao.transacao.tid);
+        if (ja_existe < 0) {
+          this.sel_transacao.push(this.operacao.transacao)
+        }
       }
     },
-    atualizaTransacoes() {
-      let t = [];
-      this.transacoes_ativas.forEach(function (v) {
-        t.push(v.tid);
-      });
-      this.sel_transacao = t;
-    },
     setCache(operacao) {
-      const obj = {ob: operacao.objeto, valor: operacao.depois}
+      const obj = {objeto: operacao.objeto, valor: operacao.depois}
       const ja_existe = this.cache.map(function (c) {
-        return c.ob;
+        return c.objeto;
       }).indexOf(operacao.objeto);
       if (ja_existe < 0) {
         this.cache.push(obj);
       } else {
         this.cache[ja_existe] = obj;
       }
+    },
+    listTransacoesCommit() {
+      let t_op = [];
+      let trans = parseInt(this.operacao.transacao.tid);
+      this.logs.forEach(function (v) {
+        if (v.operacao === 'write_item' && v.tid === trans) {
+          t_op.push(v)
+        }
+      });
+      return t_op;
     },
     setTransacaoAtivas(operacao) {
       const d = {tid: operacao.tid, tempo: operacao.tempo}
@@ -594,23 +796,12 @@ export default {
       });
     },
     setTransacaoConsolidadas(operacao) {
-      const d = {tid: operacao.transacao, tempo: tempo()}
+      const d = {tid: operacao.transacao.tid, tempo: tempo()}
       this.transacoes_consolidadas.push(d);
     },
-    retornaMaiorTransacao() {
-      let maior = 1;
-      //verificar as demais transacoes
-      this.transacoes_ativas.forEach(function (v) {
-        if (v.tid > maior) {
-          maior = v.tid;
-        }
-      });
-      this.transacoes_consolidadas.forEach(function (v) {
-        if (v.tid > maior) {
-          maior = v.tid;
-        }
-      });
-      return maior;
+    setTransacaoAbort(operacao) {
+      const d = {tid: operacao.transacao.tid, tempo: tempo()}
+      this.transacoes_abortadas.push(d);
     },
     retornaValorAnterior(p) {
       let old = "";
@@ -621,20 +812,127 @@ export default {
       });
       return old;
     },
+    consolidaTransacao() {
+      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao.tid);
+      this.setTransacaoConsolidadas(this.operacao);
+      this.operacao.transacao = "";
+    },
+    descartaTransacao(tid) {
+      const transacao = this.sel_transacao.map(function (t) {
+        return t.tid;
+      }).indexOf(parseInt(tid));
+      this.sel_transacao[transacao].ativa = false;
+      this.operacao.transacao = this.sel_transacao[transacao];
+    },
+    removeTransacao(tid) {
+      const transacao = this.sel_transacao.map(function (t) {
+        return t.tid;
+      }).indexOf(parseInt(tid));
+      this.sel_transacao.splice(transacao, 1)
+    },
+    verificaTransacaoFinalizada() {
+      let end = [];
+      let trans = parseInt(this.operacao.transacao.tid);
+      this.logs.forEach(function (v) {
+        if (v.operacao === 'end_transaction' && v.tid === trans) {
+          end.push(v)
+        }
+      });
+      return (end.length < 1);
+    },
     populaObjetos() {
       this.list_objetos = objetos();
+    },
+    AbortaTransacao(insert_log = true) {
+      for (let i = 0; i < this.timeouts.length; i++) {
+        clearTimeout(this.timeouts[i]);
+      }
+      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao.tid);
+      this.setTransacaoAbort(this.operacao);
+      console.log(this.operacao);
+      this.descartaTransacao(this.operacao.transacao.tid);
+      const i = this.list_objetos.map(function (l) {
+        return l.item;
+      }).indexOf(this.operacao.objeto.item);
+      this.list_objetos[i].transacao = 0;
+      this.list_objetos[i].ativa = false;
+
+      if (insert_log) {
+        this.logs.push(t_abort(this.operacao));
+      }
+
+      this.removeTransacao(this.operacao.transacao.tid);
+      this.selTransacao();
+      this.operacao.transacao = "";
+      this.bloqueio.finalizar = false;
+      this.bloqueio.executar = false;
+    },
+    falha() {
+
+      for (let i = 0; i < this.timeouts.length; i++) {
+        clearTimeout(this.timeouts[i]);
+      }
+
+      this.resetLogsMemoria();
+      this.resetCache();
+
+      const verifica_checkpoints = this.log_disco[this.log_disco.length - 1];
+
+      if (verifica_checkpoints.operacao === "checkpoint") {
+        return
+      }
+
+      const commits = this.log_disco.filter(l => l.operacao === 'commit');
+      const writes = this.log_disco.filter(l => l.operacao === 'write_item' || l.operacao === 'checkpoint');
+      let operacoes = [];
+
+      commits.forEach(function (c) {
+        writes.forEach(function (w) {
+          if (c.tid === w.tid || w.operacao === 'checkpoint') {
+            operacoes.push(w);
+          }
+        });
+      });
+      operacoes.reverse()
+      let objetos = [];
+      let cache = [];
+      operacoes.forEach(function (o) {
+        if (o.operacao === 'checkpoint') {
+          return
+        }
+        let i = objetos.findIndex(l => l === o.objeto);
+        if (i < 0) {
+          save_banco(o);
+          cache.push(o);
+          objetos.push(o.objeto)
+        }
+      });
+
+      this.cache = cache;
+      this.getDB();
+      this.AbortaTransacao(false);
     },
     getDB() {
       this.banco = JSON.parse(getToken());
     },
-    saveDB() {
-      const w = this.log_disco.filter(l => l.operacao === 'write_item');
-      w.forEach(function (v) {
-        save_banco(v);
+    saveDB(commits) {
+      const log_disco = this.log_disco;
+      commits.forEach(function (c) {
+        const w = log_disco.filter(l => l.operacao === 'write_item' && l.tid === c.tid);
+        w.forEach(function (v) {
+          save_banco(v);
+        });
       });
       this.getDB();
     },
-    resetLogs() {
+    initTransacao() {
+      return {tid: 1, ativa: true, abort: false};
+    },
+    geraTransacao() {
+      this.ultima_transacao.valor = this.ultima_transacao.valor + 1;
+      return {tid: this.ultima_transacao.valor, ativa: true, abort: false};
+    },
+    resetLogsMemoria() {
       this.logs = [];
     },
     resetTransacoes() {
@@ -645,4 +943,45 @@ export default {
     },
   }
 };
+
+/*
+Ao gera falha remover da lista de transações ativas
+Incluir na lista de abortadas
+E gerar um novo codigo
+
+Ao clicar em falha quando tem checkpoint no log do disco o banco de dados tambem tá atualizando
+
+Ao selecionar o mesmo objeto apos o commit a transacao tá ficando repedida
+ */
 </script>
+<style>
+.show_td {
+  background-color: #4caf50;
+  color: white;
+  font-weight: bold;
+}
+
+.end_td {
+  background-color: #b91c1c;
+  color: white;
+  font-weight: bold;
+}
+
+.end_td_text {
+  background-color: white;
+  color: white;
+}
+
+button:disabled,
+button[disabled] {
+  border: 1px solid #999999;
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+input:disabled,
+input[disabled] {
+  background-color: #cccccc;
+}
+</style>
