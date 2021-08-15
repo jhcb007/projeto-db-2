@@ -90,6 +90,19 @@
                       </div>
                     </div>
                   </div>
+                  <div class="mb-5">
+                    <div class="flex flex-col">
+                      <div class="text-center">
+                        <button
+                            @click="start()"
+                            v-bind:disabled="operacao.transacao.ativa"
+                            class="bg-teal-500 text-white active:bg-teal-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Start Transaction
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                   <div class="px-3 mt-3">
                     <div class="flex flex-wrap">
                       <div class="md:w-6/12 ">
@@ -104,6 +117,7 @@
                       </div>
                       <div class="md:w-6/12 text-right">
                         <button
+                            v-show="operacao.transacao.ativa"
                             @click="executar()"
                             v-bind:disabled="bloqueio.executar"
                             class="bg-lightBlue-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
@@ -523,6 +537,7 @@ export default {
         transacao: "",
       },
       bloqueio: {
+        start: false,
         executar: false,
         finalizar: false,
         commit: false,
@@ -567,7 +582,7 @@ export default {
     selTipo() {
       this.$router.push({name: this.tipo})
     },
-    executar() {
+    start() {
       if (this.operacao.transacao === '') {
         if (this.ultima_transacao.valor > 0) {
           this.operacao.transacao = this.geraTransacao();
@@ -575,21 +590,15 @@ export default {
           this.operacao.transacao = this.initTransacao();
         }
       }
-      if (this.operacao.transacao.ativa === false) {
-        return;
-      }
-      if (this.operacao.tipo === 'write_item') {
-        this.write();
-      } else {
-        this.read();
-      }
+      this.startTransacao();
+      this.atualizaTransacoes();
+      //this.objetoTransacao();
+      //this.selTransacao();
     },
     read() {
       this.bloqueio.finalizar = true;
       this.bloqueio.executar = true;
 
-      this.startTransacao();
-      this.atualizaTransacoes();
       this.objetoTransacao();
       this.selTransacao();
 
@@ -705,6 +714,16 @@ export default {
         this.saveDBImediata(op);
       }, (4000 * parseInt(this.segundos))));
 
+    },
+    executar() {
+      if (this.operacao.transacao.ativa === false) {
+        return;
+      }
+      if (this.operacao.tipo === 'write_item') {
+        this.write();
+      } else {
+        this.read();
+      }
     },
     finalizar() {
       if (this.operacao.transacao.ativa === false) {
