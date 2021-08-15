@@ -35,10 +35,11 @@
                     <div class="flex flex-wrap">
                       <h3 class="font-semibold text-base text-blueGray-700 mb-1">Tipo</h3>
                       <select v-model="tipo"
+                              @change="selTipo()"
                               class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                        <option value="Adiada">Adiada</option>
-                        <option disabled value="Imediata_redo">Imediata UNDO/REDO</option>
-                        <option disabled value="Imediata_noredo">Imediata UNDO/NO-REDO</option>
+                        <option value="adiada">Adiada</option>
+                        <option value="imediata_undo_no_redo">Imediata UNDO/NO-REDO</option>
+                        <option disabled value="imediata_undo_redo">Imediata UNDO/REDO</option>
                       </select>
                     </div>
                   </div>
@@ -48,8 +49,8 @@
                         <h3 class="font-semibold text-base text-blueGray-700 mb-1">Operação</h3>
                         <select v-model="operacao.tipo"
                                 class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                          <option value="write_item">Write</option>
                           <option value="read_item">Read</option>
+                          <option v-bind:disabled="temLeitura" value="write_item">Write</option>
                         </select>
                       </div>
                       <div class="md:w-6/12 pl-4">
@@ -143,7 +144,7 @@
                       <div class="md:w-6/12">
                         <button
                             v-bind:disabled="bloqueio.abort"
-                            @click="AbortaTransacao()"
+                            @click="abortaTransacao()"
                             class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button">
                           Abort
@@ -473,10 +474,10 @@ export default {
   data() {
     return {
       segundos: 1,
-      tipo: "Adiada",
+      tipo: "adiada",
       list_objetos: [],
       operacao: {
-        valor: 1,
+        valor: "",
         tipo: "read_item",
         objeto: {item: "A", transacao: 0, ativa: false, valor: null},
         transacao: "",
@@ -511,9 +512,109 @@ export default {
     this.getDB();
     this.populaObjetos();
   },
-  computed: {},
+  computed: {
+    temLeitura: {
+      get: function () {
+        const leitura = this.logs.filter(l => l.operacao === 'read_item' && l.tid === parseInt(this.operacao.objeto.transacao));
+        return leitura.length < 1;
+      },
+    },
+  },
   watch: {},
   methods: {
+    selTipo() {
+      this.$router.push({name: this.tipo})
+    },
+    read() {
+      this.bloqueio.finalizar = true;
+      this.bloqueio.executar = true;
+
+      this.startTransacao();
+      this.atualizaTransacoes();
+      this.objetoTransacao();
+      this.selTransacao();
+
+      const tem_log_memoria = this.logs.filter(l => l.operacao === 'write_item'
+          && l.tid === parseInt(this.operacao.objeto.transacao)
+          && l.objeto === this.operacao.objeto.item);
+      if (tem_log_memoria.length > 0) {
+        const memoria = tem_log_memoria[tem_log_memoria.length - 1];
+        const new_valor = this.operacao;
+        new_valor.valor = memoria.valor;
+        const insert = t_insert(new_valor);
+        this.logs.push(insert);
+        this.bloqueio.finalizar = false;
+        this.bloqueio.executar = false;
+      } else {
+        const tem_chache = this.cache.map(function (c) {
+          return c.objeto;
+        }).indexOf(this.operacao.objeto.item);
+        if (tem_chache < 0) {
+          const start = t_start(this.operacao);
+          this.timeouts.push(setTimeout(() => {
+            this.log_disco.push(start);
+          }, (1000 * parseInt(this.segundos))));
+
+          const tem_banco = this.banco.map(function (b) {
+            return b.op;
+          }).indexOf(this.operacao.objeto.item);
+
+          if (tem_banco < 0) {
+            alert("Objeto não cadastrado no banco de dados")
+            this.abortaTransacao();
+          } else {
+            const dado = this.banco[tem_banco];
+            const obj = {
+              tid: this.operacao.objeto.transacao,
+              tipo: "read_item",
+              antes: "",
+              objeto: dado.op,
+              valor: dado.valor,
+            }
+            const op = t_log_disco(obj);
+            this.timeouts.push(setTimeout(() => {
+              this.log_disco.push(op);
+            }, (2000 * parseInt(this.segundos))));
+
+            this.timeouts.push(setTimeout(() => {
+              this.setCache(op);
+            }, (4000 * parseInt(this.segundos))));
+
+            const old = this.retornaValorAnterior(this.operacao);
+
+            const new_valor = this.operacao;
+
+            this.timeouts.push(setTimeout(() => {
+              new_valor.valor = op.valor;
+              const insert = t_insert(new_valor, old);
+              this.logs.push(insert);
+              this.bloqueio.finalizar = false;
+              this.bloqueio.executar = false;
+            }, (4000 * parseInt(this.segundos))));
+
+          }
+
+        } else {
+          const cache = this.cache[tem_chache];
+          const new_valor = this.operacao;
+          new_valor.valor = cache.valor;
+          const insert = t_insert(new_valor);
+          this.logs.push(insert);
+          this.bloqueio.finalizar = false;
+          this.bloqueio.executar = false;
+        }
+      }
+
+    },
+    write() {
+      this.startTransacao();
+      const old = this.retornaValorAnterior(this.operacao);
+      const insert = t_insert(this.operacao, old);
+      this.logs.push(insert);
+      this.atualizaTransacoes();
+      this.objetoTransacao();
+      this.selTransacao();
+    },
     executar() {
       if (this.operacao.transacao === '') {
         if (this.ultima_transacao.valor > 0) {
@@ -531,86 +632,6 @@ export default {
         this.read();
       }
     },
-    read() {
-      this.bloqueio.finalizar = true;
-      this.bloqueio.executar = true;
-
-      this.startTransacao();
-      this.atualizaTransacoes();
-      this.objetoTransacao();
-      this.selTransacao();
-
-      const tem_chache = this.cache.map(function (c) {
-        return c.objeto;
-      }).indexOf(this.operacao.objeto.item);
-      if (tem_chache < 0) {
-        const start = t_start(this.operacao);
-        this.timeouts.push(setTimeout(() => {
-          this.log_disco.push(start);
-        }, (1000 * parseInt(this.segundos))));
-
-        const tem_banco = this.banco.map(function (b) {
-          return b.op;
-        }).indexOf(this.operacao.objeto.item);
-
-        if (tem_banco < 0) {
-          alert("Objeto não cadastrado no banco de dados")
-          this.AbortaTransacao();
-        } else {
-          const dado = this.banco[tem_banco];
-          const obj = {
-            tid: this.operacao.objeto.transacao,
-            tipo: "read_item",
-            objeto: dado.op,
-            valor: dado.valor,
-          }
-          const op = t_log_disco(obj);
-          this.timeouts.push(setTimeout(() => {
-            this.log_disco.push(op);
-          }, (2000 * parseInt(this.segundos))));
-
-          this.timeouts.push(setTimeout(() => {
-            this.log_disco.push(t_end(this.operacao))
-          }, (3000 * parseInt(this.segundos))));
-          this.timeouts.push(setTimeout(() => {
-            this.setCache(op);
-          }, (4000 * parseInt(this.segundos))));
-
-          const old = this.retornaValorAnterior(this.operacao);
-
-          const new_valor = this.operacao;
-
-          this.timeouts.push(setTimeout(() => {
-            new_valor.valor = op.valor;
-            const insert = t_insert(new_valor, old);
-            this.logs.push(insert);
-            this.bloqueio.finalizar = false;
-            this.bloqueio.executar = false;
-          }, (5000 * parseInt(this.segundos))));
-
-        }
-
-      } else {
-        const cache = this.cache[tem_chache];
-        const old = this.retornaValorAnterior(this.operacao);
-        const new_valor = this.operacao;
-        new_valor.valor = cache.valor;
-        const insert = t_insert(new_valor, old);
-        this.logs.push(insert);
-        this.bloqueio.finalizar = false;
-        this.bloqueio.executar = false;
-      }
-
-    },
-    write() {
-      this.startTransacao();
-      const old = this.retornaValorAnterior(this.operacao);
-      const insert = t_insert(this.operacao, old);
-      this.logs.push(insert);
-      this.atualizaTransacoes();
-      this.objetoTransacao();
-      this.selTransacao();
-    },
     finalizar() {
       if (this.operacao.transacao.ativa === false) {
         return;
@@ -621,6 +642,7 @@ export default {
           return
         }
       }
+
       const end = t_end(this.operacao);
       this.logs.push(end);
 
@@ -646,14 +668,6 @@ export default {
       }
 
     },
-    startTransacao() {
-      const ja_ativa = this.transacoes_ativas.filter(t => t.tid === parseInt(this.operacao.transacao.tid));
-      if (ja_ativa.length < 1) {
-        const start = t_start(this.operacao);
-        this.logs.push(start);
-        this.setTransacaoAtivas(start);
-      }
-    },
     commit() {
       if (this.bloqueio.commit) {
         return;
@@ -670,18 +684,25 @@ export default {
 
       const op = t_log_disco(t_op[t_op.length - 1]);
 
-      const start = t_start(this.operacao);
-      this.timeouts.push(setTimeout(() => {
-        this.log_disco.push(start)
-      }, (1000 * parseInt(this.segundos))));
+      const ja_ativa = this.startTransacao();
 
-      this.timeouts.push(setTimeout(() => {
-        this.log_disco.push(op)
-      }, (2000 * parseInt(this.segundos))));
+      if (ja_ativa.length < 1) {
+        const start = t_start(this.operacao);
+        this.timeouts.push(setTimeout(() => {
+          this.log_disco.push(start)
+        }, (1000 * parseInt(this.segundos))));
+        this.timeouts.push(setTimeout(() => {
+          this.log_disco.push(op)
+        }, (2000 * parseInt(this.segundos))));
+      } else {
+        this.timeouts.push(setTimeout(() => {
+          this.log_disco.push(op)
+        }, (1000 * parseInt(this.segundos))));
+      }
 
       this.timeouts.push(setTimeout(() => {
         this.log_disco.push(t_end(this.operacao))
-      }, (3000 * parseInt(this.segundos))));
+      }, (2000 * parseInt(this.segundos))));
 
       const commit = t_commit(this.operacao);
       this.timeouts.push(setTimeout(() => {
@@ -700,6 +721,8 @@ export default {
         this.bloqueio.commit = false;
         this.bloqueio.checkpoint = false;
       }, (5000 * parseInt(this.segundos))));
+
+      this.operacao.tipo = 'read_item';
 
     },
     saveCheckpoint() {
@@ -725,6 +748,98 @@ export default {
       this.timeouts.push(setTimeout(() => {
         this.log_disco.push(t_checkep(commits));
       }, (2000 * parseInt(this.segundos))));
+      this.timeouts.push(setTimeout(() => {
+        this.transacoes_consolidadas = [];
+        this.transacoes_abortadas = [];
+      }, (3000 * parseInt(this.segundos))));
+
+    },
+    abortaTransacao(insert_log = true) {
+
+      if (this.transacoes_ativas.length < 1) {
+        return
+      }
+
+      for (let i = 0; i < this.timeouts.length; i++) {
+        clearTimeout(this.timeouts[i]);
+      }
+
+      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao.tid);
+      this.setTransacaoAbort(this.operacao);
+      this.descartaTransacao(this.operacao.transacao.tid);
+      const i = this.list_objetos.map(function (l) {
+        return l.item;
+      }).indexOf(this.operacao.objeto.item);
+      this.list_objetos[i].transacao = 0;
+      this.list_objetos[i].ativa = false;
+
+      if (insert_log) {
+        this.logs.push(t_abort(this.operacao));
+      }
+
+      this.removeTransacao(this.operacao.transacao.tid);
+      this.selTransacao();
+      this.operacao.transacao = "";
+      this.bloqueio.finalizar = false;
+      this.bloqueio.executar = false;
+    },
+    falha() {
+
+      for (let i = 0; i < this.timeouts.length; i++) {
+        clearTimeout(this.timeouts[i]);
+      }
+
+      this.resetLogsMemoria();
+      this.resetCache();
+
+      if (this.log_disco.length < 1) {
+        return;
+      }
+
+      const verifica_checkpoints = this.log_disco[this.log_disco.length - 1];
+
+      if (verifica_checkpoints.operacao === "checkpoint") {
+        return
+      }
+
+      const commits = this.log_disco.filter(l => l.operacao === 'commit');
+      const writes = this.log_disco.filter(l => l.operacao === 'write_item' || l.operacao === 'checkpoint');
+      let operacoes = [];
+
+      commits.forEach(function (c) {
+        writes.forEach(function (w) {
+          if (c.tid === w.tid || w.operacao === 'checkpoint') {
+            operacoes.push(w);
+          }
+        });
+      });
+      operacoes.reverse()
+      let objetos = [];
+      let cache = [];
+      operacoes.forEach(function (o) {
+        if (o.operacao === 'checkpoint') {
+          return
+        }
+        let i = objetos.findIndex(l => l === o.objeto);
+        if (i < 0) {
+          save_banco(o);
+          cache.push(o);
+          objetos.push(o.objeto)
+        }
+      });
+
+      this.cache = cache;
+      this.getDB();
+      this.abortaTransacao(false);
+    },
+    startTransacao() {
+      const ja_ativa = this.transacoes_ativas.filter(t => t.tid === parseInt(this.operacao.transacao.tid));
+      if (ja_ativa.length < 1) {
+        const start = t_start(this.operacao);
+        this.logs.push(start);
+        this.setTransacaoAtivas(start);
+      }
+      return ja_ativa;
     },
     selTransacao() {
       const i = this.list_objetos.map(function (l) {
@@ -732,6 +847,7 @@ export default {
       }).indexOf(parseInt(this.operacao.transacao.tid));
       if (i < 0) {
         this.operacao.objeto = this.list_objetos.find(el => !el.ativa);
+        this.operacao.tipo = 'read_item';
       } else {
         this.operacao.objeto = this.list_objetos[i];
       }
@@ -840,77 +956,24 @@ export default {
       });
       return (end.length < 1);
     },
+    resetLogsMemoria() {
+      this.logs = [];
+    },
+    resetTransacoes() {
+      this.transacoes = [];
+    },
+    resetCache() {
+      this.cache = [];
+    },
+    initTransacao() {
+      return {tid: 1, ativa: true, abort: false};
+    },
+    geraTransacao() {
+      this.ultima_transacao.valor = this.ultima_transacao.valor + 1;
+      return {tid: this.ultima_transacao.valor, ativa: true, abort: false};
+    },
     populaObjetos() {
       this.list_objetos = objetos();
-    },
-    AbortaTransacao(insert_log = true) {
-      for (let i = 0; i < this.timeouts.length; i++) {
-        clearTimeout(this.timeouts[i]);
-      }
-      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao.tid);
-      this.setTransacaoAbort(this.operacao);
-      console.log(this.operacao);
-      this.descartaTransacao(this.operacao.transacao.tid);
-      const i = this.list_objetos.map(function (l) {
-        return l.item;
-      }).indexOf(this.operacao.objeto.item);
-      this.list_objetos[i].transacao = 0;
-      this.list_objetos[i].ativa = false;
-
-      if (insert_log) {
-        this.logs.push(t_abort(this.operacao));
-      }
-
-      this.removeTransacao(this.operacao.transacao.tid);
-      this.selTransacao();
-      this.operacao.transacao = "";
-      this.bloqueio.finalizar = false;
-      this.bloqueio.executar = false;
-    },
-    falha() {
-
-      for (let i = 0; i < this.timeouts.length; i++) {
-        clearTimeout(this.timeouts[i]);
-      }
-
-      this.resetLogsMemoria();
-      this.resetCache();
-
-      const verifica_checkpoints = this.log_disco[this.log_disco.length - 1];
-
-      if (verifica_checkpoints.operacao === "checkpoint") {
-        return
-      }
-
-      const commits = this.log_disco.filter(l => l.operacao === 'commit');
-      const writes = this.log_disco.filter(l => l.operacao === 'write_item' || l.operacao === 'checkpoint');
-      let operacoes = [];
-
-      commits.forEach(function (c) {
-        writes.forEach(function (w) {
-          if (c.tid === w.tid || w.operacao === 'checkpoint') {
-            operacoes.push(w);
-          }
-        });
-      });
-      operacoes.reverse()
-      let objetos = [];
-      let cache = [];
-      operacoes.forEach(function (o) {
-        if (o.operacao === 'checkpoint') {
-          return
-        }
-        let i = objetos.findIndex(l => l === o.objeto);
-        if (i < 0) {
-          save_banco(o);
-          cache.push(o);
-          objetos.push(o.objeto)
-        }
-      });
-
-      this.cache = cache;
-      this.getDB();
-      this.AbortaTransacao(false);
     },
     getDB() {
       this.banco = JSON.parse(getToken());
@@ -925,34 +988,10 @@ export default {
       });
       this.getDB();
     },
-    initTransacao() {
-      return {tid: 1, ativa: true, abort: false};
-    },
-    geraTransacao() {
-      this.ultima_transacao.valor = this.ultima_transacao.valor + 1;
-      return {tid: this.ultima_transacao.valor, ativa: true, abort: false};
-    },
-    resetLogsMemoria() {
-      this.logs = [];
-    },
-    resetTransacoes() {
-      this.transacoes = [];
-    },
-    resetCache() {
-      this.cache = [];
-    },
   }
 };
 
-/*
-Ao gera falha remover da lista de transações ativas
-Incluir na lista de abortadas
-E gerar um novo codigo
 
-Ao clicar em falha quando tem checkpoint no log do disco o banco de dados tambem tá atualizando
-
-Ao selecionar o mesmo objeto apos o commit a transacao tá ficando repedida
- */
 </script>
 <style>
 .show_td {

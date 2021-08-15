@@ -50,6 +50,13 @@ export function t_abort(valor) {
     }
 }
 
+export function t_desfeita(valor) {
+    return {
+        tid: valor.tid,
+        tempo: tempo(),
+    }
+}
+
 export function t_insert(valor, old = "") {
     return {
         codigo: uuidv4(),
@@ -64,7 +71,11 @@ export function t_insert(valor, old = "") {
     }
 }
 
-export function t_log_disco(valor, old = "") {
+export function t_log_disco(valor) {
+    let texto = "   " + valor.tipo + ", T" + valor.tid + ", " + valor.objeto + ", " + valor.antes + ", " + valor.valor;
+    if (valor.antes === '') {
+        texto = "   " + valor.tipo + ", T" + valor.tid + ", " + valor.objeto + ", " + valor.valor;
+    }
     return {
         codigo: uuidv4(),
         tid: valor.tid,
@@ -72,9 +83,9 @@ export function t_log_disco(valor, old = "") {
         objeto: valor.objeto,
         tipo: valor.tipo,
         valor: valor.valor,
-        antes: old,
+        antes: valor.antes,
         depois: valor.valor,
-        texto: "   " + valor.tipo + ", T" + valor.tid + ", " + valor.objeto + ", " + valor.valor
+        texto: texto
     }
 }
 

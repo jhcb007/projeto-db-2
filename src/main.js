@@ -6,12 +6,23 @@ import "@/assets/styles/tailwind.css";
 
 import App from "@/App.vue";
 
-import Admin from "@/views/Index";
+import Adiada from "@/views/Adiada";
+import ImediataUndoNoRedo from "@/views/Imediata_undo_no_redo";
 
 const routes = [
     {
         path: "/",
-        component: Admin,
+        component: Adiada,
+    },
+    {
+        path: "/adiada",
+        name: 'adiada',
+        component: Adiada,
+    },
+    {
+        path: "/imediata_undo_no_redo",
+        name: 'imediata_undo_no_redo',
+        component: ImediataUndoNoRedo,
     },
     {path: "/:pathMatch(.*)*", redirect: "/"},
 ];
