@@ -669,7 +669,7 @@ export default {
       this.descartaTransacao(end.tid);
       this.selTransacao();
 
-      if (this.operacao.tipo === 'read_item' || t_op.length < 1) {
+      if (this.operacao.tipo === 'read_item') {
         this.removeTransacao(end.tid);
         const i = this.list_objetos.map(function (l) {
           return l.item;
