@@ -211,25 +211,25 @@
                         </th>
                       </tr>
                       </thead>
-                      <tbody>
-                      <tr v-for="l in logs" :key="l.codigo">
-                        <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <span v-show="l.tid">T{{ l.tid }}</span>
-                        </th>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          {{ l.tempo }}
-                        </td>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          {{ l.operacao }}
-                        </td>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          {{ l.objeto }}
-                        </td>
-                        <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          {{ l.depois }}
-                        </td>
-                      </tr>
-                      </tbody>
+                      <transition-group :duration="500" enter-active-class="show_td" leave-active-class="end_td" tag="tbody">
+                        <tr v-for="l in logs" :key="l.codigo">
+                          <th class="border border-solid border-blueGray-300 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <span v-show="l.tid">T{{ l.tid }}</span>
+                          </th>
+                          <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            {{ l.tempo }}
+                          </td>
+                          <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            {{ l.operacao }}
+                          </td>
+                          <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            {{ l.objeto }}
+                          </td>
+                          <td class="border border-solid border-blueGray-300 border-t-0 text-center align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            {{ l.depois }}
+                          </td>
+                        </tr>
+                      </transition-group>
                     </table>
                   </div>
                 </div>
