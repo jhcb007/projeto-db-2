@@ -37,9 +37,9 @@
                       <select v-model="tipo"
                               @change="selTipo()"
                               class="px-3 py-3 placeholder-blueGray-300 text-blueGray-800 relative bg-white bg-white rounded border border-blueGray-300 outline-none focus:outline-none focus:shadow-outline w-full pl-10">
-                        <option value="adiada">Adiada</option>
+                        <option value="adiada">Adiada NO-UNDO/REDO</option>
                         <option value="imediata_undo_no_redo">Imediata UNDO/NO-REDO</option>
-                        <option disabled value="imediata_undo_redo">Imediata UNDO/REDO</option>
+                        <option value="imediata_undo_redo">Imediata UNDO/REDO</option>
                       </select>
                     </div>
                   </div>
@@ -472,7 +472,7 @@
 import {
   save_banco,
   t_abort,
-  t_checkep,
+  t_checkep, t_checkepEmpy,
   t_commit,
   t_end,
   t_insert,
@@ -576,11 +576,6 @@ export default {
           return c.objeto;
         }).indexOf(this.operacao.objeto.item);
         if (tem_chache < 0) {
-          const start = t_start(this.operacao);
-          this.timeouts.push(setTimeout(() => {
-            this.log_disco.push(start);
-          }, (1000 * parseInt(this.segundos))));
-
           const tem_banco = this.banco.map(function (b) {
             return b.op;
           }).indexOf(this.operacao.objeto.item);
@@ -599,12 +594,8 @@ export default {
             }
             const op = t_log_disco(obj);
             this.timeouts.push(setTimeout(() => {
-              this.log_disco.push(op);
-            }, (2000 * parseInt(this.segundos))));
-
-            this.timeouts.push(setTimeout(() => {
               this.setCache(op);
-            }, (4000 * parseInt(this.segundos))));
+            }, (1000 * parseInt(this.segundos))));
 
             const old = this.retornaValorAnterior(this.operacao);
 
@@ -616,7 +607,7 @@ export default {
               this.logs.push(insert);
               this.bloqueio.finalizar = false;
               this.bloqueio.executar = false;
-            }, (4000 * parseInt(this.segundos))));
+            }, (2000 * parseInt(this.segundos))));
 
           }
 
@@ -703,25 +694,19 @@ export default {
 
       const op = t_log_disco(t_op[t_op.length - 1]);
 
-      const ja_ativa = this.startTransacao();
+      this.startTransacao();
 
-      if (ja_ativa.length < 1) {
-        const start = t_start(this.operacao);
-        this.timeouts.push(setTimeout(() => {
-          this.log_disco.push(start)
-        }, (1000 * parseInt(this.segundos))));
-        this.timeouts.push(setTimeout(() => {
-          this.log_disco.push(op)
-        }, (2000 * parseInt(this.segundos))));
-      } else {
-        this.timeouts.push(setTimeout(() => {
-          this.log_disco.push(op)
-        }, (1000 * parseInt(this.segundos))));
-      }
+      const start = t_start(this.operacao);
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(start)
+      }, (1000 * parseInt(this.segundos))));
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(op)
+      }, (2000 * parseInt(this.segundos))));
 
       this.timeouts.push(setTimeout(() => {
         this.log_disco.push(t_end(this.operacao))
-      }, (2000 * parseInt(this.segundos))));
+      }, (3000 * parseInt(this.segundos))));
 
       const commit = t_commit(this.operacao);
       this.timeouts.push(setTimeout(() => {
@@ -747,6 +732,9 @@ export default {
     saveCheckpoint() {
       let commits = this.log_disco.filter(l => l.operacao === 'commit');
       if (commits.length < 1) {
+        this.timeouts.push(setTimeout(() => {
+          this.log_disco.push(t_checkepEmpy());
+        }, (1000 * parseInt(this.segundos))));
         return
       }
       const checkpoints = this.log_disco.filter(l => l.operacao === 'checkpoint');

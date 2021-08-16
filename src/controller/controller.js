@@ -50,6 +50,22 @@ export function t_abort(valor) {
     }
 }
 
+export function t_abortALL(tid) {
+    return {
+        codigo: uuidv4(),
+        tid: tid,
+        tempo: tempo(),
+        operacao: "abort_transaction",
+        objeto: "",
+        antes: "",
+        depois: "",
+        valor: "T" + tid,
+        pAnt: 0,
+        pProx: 0,
+        texto: "abort_transaction, T" + tid
+    }
+}
+
 export function t_desfeita(valor) {
     return {
         tid: valor.tid,
@@ -111,6 +127,17 @@ export function t_checkep(commit) {
         tipo: "",
         valor: "",
         texto: "checkpoint, " + trans.join(' ')
+    }
+}
+
+export function t_checkepEmpy() {
+    return {
+        codigo: uuidv4(),
+        operacao: "checkpoint",
+        objeto: "",
+        tipo: "",
+        valor: "",
+        texto: "checkpoint"
     }
 }
 

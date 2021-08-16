@@ -90,7 +90,7 @@
                       </div>
                     </div>
                   </div>
-                  <div class="mb-5">
+                  <div v-show="!operacao.transacao.commit" class="mb-5">
                     <div class="flex flex-col">
                       <div class="text-center">
                         <button
@@ -103,7 +103,7 @@
                       </div>
                     </div>
                   </div>
-                  <div class="px-3 mt-3">
+                  <div v-show="!operacao.transacao.commit" class="px-3 mt-4">
                     <div class="flex flex-wrap">
                       <div class="md:w-6/12 ">
                         <button
@@ -155,7 +155,7 @@
                   <hr class="py-1">
                   <div class="px-3 py-1">
                     <div class="flex flex-wrap">
-                      <div class="md:w-6/12">
+                      <div class="md:w-4/12">
                         <button
                             v-bind:disabled="bloqueio.abort"
                             @click="abortaTransacao()"
@@ -164,7 +164,15 @@
                           Abort
                         </button>
                       </div>
-                      <div class="md:w-6/12 text-right">
+                      <div class="md:w-4/12">
+                        <button
+                            @click="setEstouroMemoria()"
+                            class="bg-red-700 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                            type="button">
+                          Estouro
+                        </button>
+                      </div>
+                      <div class="md:w-4/12 text-right">
                         <button
                             @click="falha()"
                             v-bind:disabled="bloqueio.falha"
@@ -173,6 +181,13 @@
                           Falha
                         </button>
                       </div>
+                    </div>
+                  </div>
+                  <div class="flex flex-col">
+                    <div class="text-center">
+                      <h3 v-show="estouro_memoria" class="pulsate font-bold text-base text-red-500">
+                        Estouro de memória
+                      </h3>
                     </div>
                   </div>
                 </div>
@@ -528,7 +543,7 @@ export default {
   data() {
     return {
       segundos: 1,
-      tipo: "imediata_undo_no_redo",
+      tipo: "imediata_undo_redo",
       list_objetos: [],
       operacao: {
         valor: "",
@@ -545,6 +560,7 @@ export default {
         abort: false,
         falha: false
       },
+      estouro_memoria: false,
       ultima_transacao: {
         valor: 0
       },
@@ -561,7 +577,7 @@ export default {
       checkpoint_realizados: [],
       transacoes_refeitas: [],
       timeouts: [],
-      transacoes_temp: [],
+      transacoes_temp: []
     };
   },
   created() {
@@ -631,11 +647,13 @@ export default {
             const obj = {
               tid: this.operacao.objeto.transacao,
               tipo: "read_item",
-              objeto: dado.op,
               antes: "",
+              objeto: dado.op,
               valor: dado.valor,
             }
+
             const op = t_log_disco(obj);
+
             this.timeouts.push(setTimeout(() => {
               this.setCache(op);
             }, (1000 * parseInt(this.segundos))));
@@ -665,45 +683,22 @@ export default {
           this.bloqueio.executar = false;
         }
       }
+
     },
     write() {
       this.startTransacao();
       const old = this.retornaValorAnterior(this.operacao);
       const insert = t_insert(this.operacao, old);
       this.logs.push(insert);
+      this.timeouts.push(setTimeout(() => {
+        this.setCache(insert);
+      }, (1000 * parseInt(this.segundos))))
       this.atualizaTransacoes();
       this.objetoTransacao();
       this.selTransacao();
-
-      const t_op = this.listTransacoesCommit();
-      if (t_op.length < 1) {
-        return
+      if (this.estouro_memoria) {
+        this.commitImediata(this.operacao.transacao.tid)
       }
-
-      const op = t_log_disco(t_op[t_op.length - 1]);
-
-      this.timeouts.push(setTimeout(() => {
-        this.setCache(op);
-      }, (1000 * parseInt(this.segundos))));
-
-
-      const ja_ativa_disco = this.log_disco.filter(t => t.tid === parseInt(op.tid) && t.operacao === 'start_transaction');
-
-      if (ja_ativa_disco.length < 1) {
-        const start = t_start(this.operacao);
-        this.timeouts.push(setTimeout(() => {
-          this.log_disco.push(start)
-        }, (2000 * parseInt(this.segundos))));
-      }
-
-      this.timeouts.push(setTimeout(() => {
-        this.log_disco.push(op)
-      }, (3000 * parseInt(this.segundos))));
-
-      this.timeouts.push(setTimeout(() => {
-        this.saveDBImediata(op);
-      }, (4000 * parseInt(this.segundos))));
-
     },
     executar() {
       if (this.operacao.transacao.ativa === false) {
@@ -719,13 +714,16 @@ export default {
       if (this.operacao.transacao.ativa === false) {
         return;
       }
+
       const ultima = this.logs[this.logs.length - 1];
       if (ultima) {
         if (ultima.operacao === 'end_transaction' && ultima.tid === this.operacao.transacao.tid) {
           return
         }
       }
+
       const end = t_end(this.operacao);
+      const transacao = end.tid;
       this.logs.push(end);
 
       if (this.operacao.tipo === 'write_item') {
@@ -734,27 +732,42 @@ export default {
         this.timeouts.push(setTimeout(() => {
           this.setCache(op);
         }, (1000 * parseInt(this.segundos))));
-        this.timeouts.push(setTimeout(() => {
-          this.log_disco.push(t_end(this.operacao))
-        }, (2000 * parseInt(this.segundos))));
       }
 
-      this.descartaTransacao(end.tid);
-      this.selTransacao();
+      this.removeTransacao(transacao);
 
       if (this.operacao.tipo === 'read_item') {
-        this.removeTransacao(end.tid);
         const i = this.list_objetos.map(function (l) {
           return l.item;
         }).indexOf(this.operacao.objeto.item);
         this.list_objetos[i].transacao = 0;
         this.list_objetos[i].ativa = false;
-        this.consolidaTransacao();
       }
+
+      if (this.operacao.tipo === 'read_item') {
+        this.consolidaTransacao();
+      } else {
+        this.operacao.transacao = "";
+      }
+
+      this.selTransacao();
+
+      const logs = this.logs.filter(l => l.operacao === 'end_transaction');
+      logs.forEach(function (v) {
+        const i = this.sel_transacao.map(function (s) {
+          return s.tid;
+        }).indexOf(v.tid);
+        if (i < 0) {
+          this.sel_transacao.push({tid: v.tid, ativa: true, abort: false, commit: true});
+        }
+      }, this);
 
     },
     commit() {
       if (this.bloqueio.commit) {
+        return;
+      }
+      if (this.verificaTransacaoFinalizada()) {
         return;
       }
       const t_op = this.listTransacoesCommit();
@@ -766,21 +779,17 @@ export default {
 
       const op = t_log_disco(t_op[t_op.length - 1]);
 
-      const verifica_finalizada = [];
-      let trans = parseInt(this.operacao.transacao.tid);
-      this.logs.forEach(function (v) {
-        if (v.operacao === 'end_transaction' && v.tid === trans) {
-          verifica_finalizada.push(v)
-        }
-      });
+      const start = t_start(this.operacao);
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(start)
+      }, (1000 * parseInt(this.segundos))));
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(op)
+      }, (2000 * parseInt(this.segundos))));
 
-      if (verifica_finalizada.length < 1) {
-        const end = t_end(this.operacao);
-        this.logs.push(end);
-        this.timeouts.push(setTimeout(() => {
-          this.log_disco.push(t_end(this.operacao))
-        }, (1000 * parseInt(this.segundos))));
-      }
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(t_end(this.operacao))
+      }, (3000 * parseInt(this.segundos))));
 
       const commit = t_commit(this.operacao);
       this.timeouts.push(setTimeout(() => {
@@ -792,16 +801,39 @@ export default {
         }).indexOf(op.objeto);
         this.list_objetos[i].transacao = 0;
         this.list_objetos[i].ativa = false;
-      }, (2000 * parseInt(this.segundos))));
+      }, (4000 * parseInt(this.segundos))));
 
       this.timeouts.push(setTimeout(() => {
         this.consolidaTransacao();
         this.bloqueio.commit = false;
         this.bloqueio.checkpoint = false;
-      }, (3000 * parseInt(this.segundos))));
+      }, (5000 * parseInt(this.segundos))));
 
       this.operacao.tipo = 'read_item';
 
+    },
+    commitImediata(transacao) {
+      const transacoes = this.logs.filter(t => t.tid === parseInt(transacao) && t.operacao === 'write_item');
+      if (transacoes.length < 1) {
+        return;
+      }
+      const op = t_log_disco(transacoes[transacoes.length - 1]);
+
+      const ja_ativa_disco = this.log_disco.filter(t => t.tid === parseInt(op.tid) && t.operacao === 'start_transaction');
+      if (ja_ativa_disco.length < 1) {
+        const dados_start = {transacao: {tid: transacao}}
+        const start = t_start(dados_start);
+        this.timeouts.push(setTimeout(() => {
+          this.log_disco.push(start)
+        }, (1000 * parseInt(this.segundos))));
+      }
+
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(op)
+      }, (2000 * parseInt(this.segundos))));
+      this.timeouts.push(setTimeout(() => {
+        this.saveDBImediata(op);
+      }, (3000 * parseInt(this.segundos))));
     },
     saveCheckpoint() {
       let commits = this.log_disco.filter(l => l.operacao === 'commit');
@@ -824,13 +856,15 @@ export default {
         return
       }
       this.timeouts.push(setTimeout(() => {
-        this.log_disco.push(t_checkep(commits));
+        this.saveDB(commits);
       }, (1000 * parseInt(this.segundos))));
-
+      this.timeouts.push(setTimeout(() => {
+        this.log_disco.push(t_checkep(commits));
+      }, (2000 * parseInt(this.segundos))));
       this.timeouts.push(setTimeout(() => {
         this.transacoes_consolidadas = [];
         this.transacoes_abortadas = [];
-      }, (2000 * parseInt(this.segundos))));
+      }, (3000 * parseInt(this.segundos))));
 
     },
     abortaTransacao(insert_log = true) {
@@ -862,6 +896,59 @@ export default {
       this.bloqueio.executar = false;
     },
     falha() {
+      if (this.estouro_memoria) {
+        this.falhaUndo();
+      } else {
+        this.falhaRedo()
+      }
+    },
+    falhaRedo() {
+      for (let i = 0; i < this.timeouts.length; i++) {
+        clearTimeout(this.timeouts[i]);
+      }
+      this.resetLogsMemoria();
+      this.resetCache();
+
+      if (this.log_disco.length < 1) {
+        this.abortaTransacao(false);
+        return;
+      }
+      const verifica_checkpoints = this.log_disco[this.log_disco.length - 1];
+
+      if (verifica_checkpoints.operacao === "checkpoint") {
+        return
+      }
+      const commits = this.log_disco.filter(l => l.operacao === 'commit');
+      const writes = this.log_disco.filter(l => l.operacao === 'write_item' || l.operacao === 'checkpoint');
+      let operacoes = [];
+
+      commits.forEach(function (c) {
+        writes.forEach(function (w) {
+          if (c.tid === w.tid || w.operacao === 'checkpoint') {
+            operacoes.push(w);
+          }
+        });
+      });
+      operacoes.reverse()
+      let objetos = [];
+      let cache = [];
+      operacoes.forEach(function (o) {
+        if (o.operacao === 'checkpoint') {
+          return
+        }
+        let i = objetos.findIndex(l => l === o.objeto);
+        if (i < 0) {
+          save_banco(o);
+          cache.push(o);
+          objetos.push(o.objeto)
+        }
+      });
+
+      this.cache = cache;
+      this.getDB();
+      this.abortaTransacao(false);
+    },
+    falhaUndo() {
 
       for (let i = 0; i < this.timeouts.length; i++) {
         clearTimeout(this.timeouts[i]);
@@ -882,8 +969,11 @@ export default {
 
       const log_disco = [];
       this.log_disco.forEach(function (l) {
-        log_disco.push(l);
-      });
+        const ja_desfeita = this.transacoes_desfeitas.filter(t => t.tid === l.tid);
+        if (ja_desfeita.length < 1) {
+          log_disco.push(l);
+        }
+      }, this);
 
       log_disco.reverse()
       const operacoes = [];
@@ -948,7 +1038,7 @@ export default {
       if (this.sel_transacao.length < 1) {
         let t = null;
         if (this.ultima_transacao.valor > 0) {
-          t = {tid: this.ultima_transacao.valor, ativa: true, abort: false};
+          t = {tid: this.ultima_transacao.valor, ativa: true, abort: false, commit: false};
         } else {
           t = this.initTransacao();
         }
@@ -1003,6 +1093,17 @@ export default {
       const d = {tid: tid, tempo: tempo()}
       this.transacoes_abortadas.push(d);
     },
+    setEstouroMemoria() {
+      if (this.estouro_memoria) {
+        this.estouro_memoria = false;
+      } else {
+        this.saveCheckpoint();
+        this.estouro_memoria = true;
+        this.transacoes_ativas.forEach(function (v) {
+          this.commitImediata(v.tid);
+        }, this);
+      }
+    },
     retornaValorAnterior(p) {
       let old = "";
       this.logs.forEach(function (v) {
@@ -1011,34 +1112,6 @@ export default {
         }
       });
       return old;
-    },
-    consolidaTransacao() {
-      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao.tid);
-      this.setTransacaoConsolidadas(this.operacao);
-      this.operacao.transacao = "";
-    },
-    descartaTransacao(tid) {
-      const transacao = this.sel_transacao.map(function (t) {
-        return t.tid;
-      }).indexOf(parseInt(tid));
-      this.sel_transacao[transacao].ativa = false;
-      this.operacao.transacao = this.sel_transacao[transacao];
-    },
-    removeTransacao(tid) {
-      const transacao = this.sel_transacao.map(function (t) {
-        return t.tid;
-      }).indexOf(parseInt(tid));
-      this.sel_transacao.splice(transacao, 1)
-    },
-    verificaTransacaoFinalizada() {
-      let end = [];
-      let trans = parseInt(this.operacao.transacao.tid);
-      this.logs.forEach(function (v) {
-        if (v.operacao === 'end_transaction' && v.tid === trans) {
-          end.push(v)
-        }
-      });
-      return (end.length < 1);
     },
     transacoesDesfeita(transacoes) {
       this.transacoes_temp = transacoes;
@@ -1080,6 +1153,34 @@ export default {
       this.transacoes_temp = [];
 
     },
+    consolidaTransacao() {
+      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao.tid);
+      this.setTransacaoConsolidadas(this.operacao);
+      this.operacao.transacao = "";
+    },
+    descartaTransacao(tid) {
+      const transacao = this.sel_transacao.map(function (t) {
+        return t.tid;
+      }).indexOf(parseInt(tid));
+      this.sel_transacao[transacao].ativa = false;
+      this.operacao.transacao = this.sel_transacao[transacao];
+    },
+    removeTransacao(tid) {
+      const transacao = this.sel_transacao.map(function (t) {
+        return t.tid;
+      }).indexOf(parseInt(tid));
+      this.sel_transacao.splice(transacao, 1)
+    },
+    verificaTransacaoFinalizada() {
+      let end = [];
+      let trans = parseInt(this.operacao.transacao.tid);
+      this.logs.forEach(function (v) {
+        if (v.operacao === 'end_transaction' && v.tid === trans) {
+          end.push(v)
+        }
+      });
+      return (end.length < 1);
+    },
     resetLogsMemoria() {
       this.logs = [];
     },
@@ -1090,7 +1191,7 @@ export default {
       this.cache = [];
     },
     initTransacao() {
-      return {tid: 1, ativa: true, abort: false};
+      return {tid: 1, ativa: true, abort: false, commit: false};
     },
     geraTransacao() {
       this.ultima_transacao.valor = this.ultima_transacao.valor + 1;
@@ -1150,5 +1251,23 @@ button[disabled] {
 input:disabled,
 input[disabled] {
   background-color: #cccccc;
+}
+
+.pulsate {
+  -webkit-animation: pulsate 1s ease-out;
+  -webkit-animation-iteration-count: infinite;
+  opacity: 0.5;
+}
+
+@-webkit-keyframes pulsate {
+  0% {
+    opacity: 0.0;
+  }
+  50% {
+    opacity: 1.0;
+  }
+  100% {
+    opacity: 0.0;
+  }
 }
 </style>

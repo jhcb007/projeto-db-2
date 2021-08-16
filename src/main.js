@@ -8,6 +8,7 @@ import App from "@/App.vue";
 
 import Adiada from "@/views/Adiada";
 import ImediataUndoNoRedo from "@/views/Imediata_undo_no_redo";
+import ImediataUndoRedo from "@/views/Imediata_undo_redo";
 
 const routes = [
     {
@@ -23,6 +24,11 @@ const routes = [
         path: "/imediata_undo_no_redo",
         name: 'imediata_undo_no_redo',
         component: ImediataUndoNoRedo,
+    },
+    {
+        path: "/imediata_undo_redo",
+        name: 'imediata_undo_redo',
+        component: ImediataUndoRedo,
     },
     {path: "/:pathMatch(.*)*", redirect: "/"},
 ];
