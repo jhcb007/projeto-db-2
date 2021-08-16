@@ -726,39 +726,47 @@ export default {
       const transacao = end.tid;
       this.logs.push(end);
 
+      const t_op = this.listTransacoesCommit();
+
       if (this.operacao.tipo === 'write_item') {
-        const t_op = this.listTransacoesCommit();
-        const op = t_log_disco(t_op[t_op.length - 1]);
-        this.timeouts.push(setTimeout(() => {
-          this.setCache(op);
-        }, (1000 * parseInt(this.segundos))));
-      }
-
-      this.removeTransacao(transacao);
-
-      if (this.operacao.tipo === 'read_item') {
-        const i = this.list_objetos.map(function (l) {
-          return l.item;
-        }).indexOf(this.operacao.objeto.item);
-        this.list_objetos[i].transacao = 0;
-        this.list_objetos[i].ativa = false;
-      }
-
-      if (this.operacao.tipo === 'read_item') {
-        this.consolidaTransacao();
-      } else {
-        this.operacao.transacao = "";
+        if (t_op.length > 0) {
+          const op = t_log_disco(t_op[t_op.length - 1]);
+          this.timeouts.push(setTimeout(() => {
+            this.setCache(op);
+          }, (1000 * parseInt(this.segundos))));
+        }
       }
 
       this.selTransacao();
 
+      if (this.operacao.tipo === 'read_item' || t_op.length < 1) {
+        this.removeTransacao(transacao);
+        const i = this.list_objetos.map(function (l) {
+          return l.item;
+        }).indexOf(this.operacao.objeto.item);
+        if (i > -1) {
+          this.list_objetos[i].transacao = 0;
+          this.list_objetos[i].ativa = false;
+        }
+      }
+
+      this.consolidaTransacao();
+
       const logs = this.logs.filter(l => l.operacao === 'end_transaction');
+
       logs.forEach(function (v) {
+        const tem_abort = logs.filter(l => v.tid === l.tid && l.operacao === 'abort_transaction');
+        if (tem_abort.length > 0) {
+          return
+        }
         const i = this.sel_transacao.map(function (s) {
           return s.tid;
         }).indexOf(v.tid);
-        if (i < 0) {
-          this.sel_transacao.push({tid: v.tid, ativa: true, abort: false, commit: true});
+        const tem_gravacao = logs.filter(l => v.tid === l.tid && l.operacao === 'write_item');
+        if (tem_gravacao.length > 0) {
+          if (i < 0) {
+            this.sel_transacao.push({tid: v.tid, ativa: true, abort: false, commit: true});
+          }
         }
       }, this);
 
@@ -772,7 +780,14 @@ export default {
       }
       const t_op = this.listTransacoesCommit();
       if (t_op.length < 1) {
-        return
+        const t_leitura = this.listTransacoesLeita();
+        if (t_leitura.length < 1) {
+          return;
+        } else {
+          this.removeTransacao(this.operacao.transacao.tid);
+          this.operacao.transacao = "";
+          return;
+        }
       }
       this.bloqueio.commit = true;
       this.bloqueio.checkpoint = true;
@@ -867,7 +882,73 @@ export default {
       }, (3000 * parseInt(this.segundos))));
 
     },
-    abortaTransacao(insert_log = true) {
+    abortaTransacao() {
+
+      if (this.operacao.transacao === '') {
+        return
+      }
+
+      if (this.transacoes_ativas.length < 1) {
+        return
+      }
+
+      for (let i = 0; i < this.timeouts.length; i++) {
+        clearTimeout(this.timeouts[i]);
+      }
+
+      const w = this.operacao.transacao;
+
+      this.transacoes_ativas = this.removeTransacaoAtivas(w.tid);
+      this.setTransacaoAbort(w.tid);
+      this.descartaTransacao(w.tid);
+      const i = this.list_objetos.map(function (l) {
+        return l.transacao;
+      }).indexOf(w.tid);
+      if (i > -1) {
+        this.list_objetos[i].transacao = 0;
+        this.list_objetos[i].ativa = false;
+      }
+      this.logs.push(t_abortALL(w.tid));
+      this.removeTransacao(w.tid);
+
+      this.selTransacao();
+      this.operacao.transacao = "";
+      this.bloqueio.finalizar = false;
+      this.bloqueio.executar = false;
+
+      if (this.estouro_memoria) {
+        const tem_no_disco = this.log_disco.filter(f => f.operacao === 'write_item' && f.tid === w.tid);
+        if (tem_no_disco.length > 0) {
+          tem_no_disco.reverse();
+          tem_no_disco.forEach(function (o) {
+            o.valor = o.antes;
+            save_banco(o);
+          });
+          this.transacoes_desfeitas.push(t_desfeita(w));
+          this.timeouts.push(setTimeout(() => {
+            this.getDB();
+          }, (1000 * parseInt(this.segundos))));
+          const op = t_log_disco(tem_no_disco[tem_no_disco.length - 1]);
+          this.timeouts.push(setTimeout(() => {
+            this.setCache(op);
+          }, (2000 * parseInt(this.segundos))));
+        }
+      } else {
+        const tem_na_cache = this.cache.filter(c => c.objeto === this.operacao.objeto.item);
+        if (tem_na_cache.length > 0) {
+          const logs = this.logs.filter(l => l.tid === w.tid && l.operacao === 'write_item');
+          logs.reverse();
+          if (logs.length > 0) {
+            const op = t_log_disco(logs[logs.length - 1]);
+            this.timeouts.push(setTimeout(() => {
+              op.depois = op.antes;
+              this.setCache(op);
+            }, (1000 * parseInt(this.segundos))));
+          }
+        }
+      }
+    },
+    abortaTransacaoALL() {
       if (this.transacoes_ativas.length < 1) {
         return
       }
@@ -881,10 +962,9 @@ export default {
         const i = this.list_objetos.map(function (l) {
           return l.transacao;
         }).indexOf(w.tid);
-        this.list_objetos[i].transacao = 0;
-        this.list_objetos[i].ativa = false;
-        if (insert_log) {
-          this.logs.push(t_abortALL(w.tid));
+        if (i > -1) {
+          this.list_objetos[i].transacao = 0;
+          this.list_objetos[i].ativa = false;
         }
         this.removeTransacao(w.tid);
 
@@ -910,7 +990,7 @@ export default {
       this.resetCache();
 
       if (this.log_disco.length < 1) {
-        this.abortaTransacao(false);
+        this.abortaTransacaoALL();
         return;
       }
       const verifica_checkpoints = this.log_disco[this.log_disco.length - 1];
@@ -946,7 +1026,7 @@ export default {
 
       this.cache = cache;
       this.getDB();
-      this.abortaTransacao(false);
+      this.abortaTransacaoALL();
     },
     falhaUndo() {
 
@@ -1076,6 +1156,16 @@ export default {
       });
       return t_op;
     },
+    listTransacoesLeita() {
+      let t_op = [];
+      let trans = parseInt(this.operacao.transacao.tid);
+      this.logs.forEach(function (v) {
+        if (v.operacao === 'read_item' && v.tid === trans) {
+          t_op.push(v)
+        }
+      });
+      return t_op;
+    },
     setTransacaoAtivas(operacao) {
       const d = {tid: operacao.tid, tempo: operacao.tempo}
       this.transacoes_ativas.push(d);
@@ -1195,7 +1285,7 @@ export default {
     },
     geraTransacao() {
       this.ultima_transacao.valor = this.ultima_transacao.valor + 1;
-      return {tid: this.ultima_transacao.valor, ativa: true, abort: false};
+      return {tid: this.ultima_transacao.valor, ativa: true, abort: false, commit: false};
     },
     populaObjetos() {
       this.list_objetos = objetos();

@@ -656,24 +656,28 @@ export default {
       const end = t_end(this.operacao);
       this.logs.push(end);
 
+      const t_op = this.listTransacoesCommit();
       if (this.operacao.tipo === 'write_item') {
-        const t_op = this.listTransacoesCommit();
-        const op = t_log_disco(t_op[t_op.length - 1]);
-        this.timeouts.push(setTimeout(() => {
-          this.setCache(op);
-        }, (1000 * parseInt(this.segundos))));
+        if (t_op.length > 0) {
+          const op = t_log_disco(t_op[t_op.length - 1]);
+          this.timeouts.push(setTimeout(() => {
+            this.setCache(op);
+          }, (1000 * parseInt(this.segundos))));
+        }
       }
 
       this.descartaTransacao(end.tid);
       this.selTransacao();
 
-      if (this.operacao.tipo === 'read_item') {
+      if (this.operacao.tipo === 'read_item' || t_op.length < 1) {
         this.removeTransacao(end.tid);
         const i = this.list_objetos.map(function (l) {
           return l.item;
         }).indexOf(this.operacao.objeto.item);
-        this.list_objetos[i].transacao = 0;
-        this.list_objetos[i].ativa = false;
+        if (i > -1) {
+          this.list_objetos[i].transacao = 0;
+          this.list_objetos[i].ativa = false;
+        }
         this.consolidaTransacao();
       }
 
@@ -771,9 +775,11 @@ export default {
         clearTimeout(this.timeouts[i]);
       }
 
-      this.transacoes_ativas = this.removeTransacaoAtivas(this.operacao.transacao.tid);
-      this.setTransacaoAbort(this.operacao);
-      this.descartaTransacao(this.operacao.transacao.tid);
+      const w = this.operacao.transacao;
+
+      this.transacoes_ativas = this.removeTransacaoAtivas(w.tid);
+      this.setTransacaoAbort(w.tid);
+      this.descartaTransacao(w.tid);
       const i = this.list_objetos.map(function (l) {
         return l.item;
       }).indexOf(this.operacao.objeto.item);
@@ -784,7 +790,44 @@ export default {
         this.logs.push(t_abort(this.operacao));
       }
 
-      this.removeTransacao(this.operacao.transacao.tid);
+      this.removeTransacao(w.tid);
+      this.selTransacao();
+      this.operacao.transacao = "";
+      this.bloqueio.finalizar = false;
+      this.bloqueio.executar = false;
+
+      const tem_na_cache = this.cache.filter(c => c.objeto === this.operacao.objeto.item);
+      if (tem_na_cache.length > 0) {
+        const logs = this.logs.filter(l => l.tid === w.tid && (l.operacao === 'write_item' || l.operacao === 'read_item'));
+        logs.reverse();
+        const op = t_log_disco(logs[logs.length - 1]);
+        this.timeouts.push(setTimeout(() => {
+          this.setCache(op);
+        }, (1000 * parseInt(this.segundos))));
+      }
+    },
+    abortaTransacaoALL() {
+      if (this.transacoes_ativas.length < 1) {
+        return
+      }
+      for (let i = 0; i < this.timeouts.length; i++) {
+        clearTimeout(this.timeouts[i]);
+      }
+      this.transacoes_ativas.forEach(function (w) {
+        this.transacoes_ativas = this.removeTransacaoAtivas(w.tid);
+        this.setTransacaoAbort(w.tid);
+        this.descartaTransacao(w.tid);
+        const i = this.list_objetos.map(function (l) {
+          return l.transacao;
+        }).indexOf(w.tid);
+        if (i > -1) {
+          this.list_objetos[i].transacao = 0;
+          this.list_objetos[i].ativa = false;
+        }
+        this.removeTransacao(w.tid);
+
+      }, this);
+
       this.selTransacao();
       this.operacao.transacao = "";
       this.bloqueio.finalizar = false;
@@ -800,6 +843,7 @@ export default {
       this.resetCache();
 
       if (this.log_disco.length < 1) {
+        this.abortaTransacaoALL();
         return;
       }
 
@@ -922,8 +966,8 @@ export default {
       const d = {tid: operacao.transacao.tid, tempo: tempo()}
       this.transacoes_consolidadas.push(d);
     },
-    setTransacaoAbort(operacao) {
-      const d = {tid: operacao.transacao.tid, tempo: tempo()}
+    setTransacaoAbort(tid) {
+      const d = {tid: tid, tempo: tempo()}
       this.transacoes_abortadas.push(d);
     },
     retornaValorAnterior(p) {

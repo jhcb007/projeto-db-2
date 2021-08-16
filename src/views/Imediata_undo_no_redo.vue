@@ -728,27 +728,31 @@ export default {
       const end = t_end(this.operacao);
       this.logs.push(end);
 
+      const t_op = this.listTransacoesCommit();
       if (this.operacao.tipo === 'write_item') {
-        const t_op = this.listTransacoesCommit();
-        const op = t_log_disco(t_op[t_op.length - 1]);
-        this.timeouts.push(setTimeout(() => {
-          this.setCache(op);
-        }, (1000 * parseInt(this.segundos))));
-        this.timeouts.push(setTimeout(() => {
-          this.log_disco.push(t_end(this.operacao))
-        }, (2000 * parseInt(this.segundos))));
+        if (t_op.length > 0) {
+          const op = t_log_disco(t_op[t_op.length - 1]);
+          this.timeouts.push(setTimeout(() => {
+            this.setCache(op);
+          }, (1000 * parseInt(this.segundos))));
+          this.timeouts.push(setTimeout(() => {
+            this.log_disco.push(t_end(this.operacao))
+          }, (2000 * parseInt(this.segundos))));
+        }
       }
 
       this.descartaTransacao(end.tid);
       this.selTransacao();
 
-      if (this.operacao.tipo === 'read_item') {
+      if (this.operacao.tipo === 'read_item' || t_op.length < 1) {
         this.removeTransacao(end.tid);
         const i = this.list_objetos.map(function (l) {
           return l.item;
         }).indexOf(this.operacao.objeto.item);
-        this.list_objetos[i].transacao = 0;
-        this.list_objetos[i].ativa = false;
+        if (i > -1) {
+          this.list_objetos[i].transacao = 0;
+          this.list_objetos[i].ativa = false;
+        }
         this.consolidaTransacao();
       }
 
@@ -834,6 +838,10 @@ export default {
 
     },
     abortaTransacao() {
+      if (this.operacao.transacao === '') {
+        return
+      }
+
       if (this.transacoes_ativas.length < 1) {
         return
       }
@@ -849,8 +857,10 @@ export default {
       const i = this.list_objetos.map(function (l) {
         return l.transacao;
       }).indexOf(w.tid);
-      this.list_objetos[i].transacao = 0;
-      this.list_objetos[i].ativa = false;
+      if (i > -1) {
+        this.list_objetos[i].transacao = 0;
+        this.list_objetos[i].ativa = false;
+      }
 
       this.logs.push(t_abortALL(w.tid));
       this.removeTransacao(w.tid);
@@ -893,9 +903,10 @@ export default {
         const i = this.list_objetos.map(function (l) {
           return l.transacao;
         }).indexOf(w.tid);
-        this.list_objetos[i].transacao = 0;
-        this.list_objetos[i].ativa = false;
-
+        if (i > -1) {
+          this.list_objetos[i].transacao = 0;
+          this.list_objetos[i].ativa = false;
+        }
         this.removeTransacao(w.tid);
 
       }, this);
@@ -915,6 +926,7 @@ export default {
       this.resetCache();
 
       if (this.log_disco.length < 1) {
+        this.abortaTransacaoALL();
         return;
       }
 
