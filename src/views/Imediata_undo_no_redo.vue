@@ -833,7 +833,53 @@ export default {
       }, (2000 * parseInt(this.segundos))));
 
     },
-    abortaTransacao(insert_log = true) {
+    abortaTransacao() {
+      if (this.transacoes_ativas.length < 1) {
+        return
+      }
+      for (let i = 0; i < this.timeouts.length; i++) {
+        clearTimeout(this.timeouts[i]);
+      }
+
+      const w = this.operacao.transacao;
+
+      this.transacoes_ativas = this.removeTransacaoAtivas(w.tid);
+      this.setTransacaoAbort(w.tid);
+      this.descartaTransacao(w.tid);
+      const i = this.list_objetos.map(function (l) {
+        return l.transacao;
+      }).indexOf(w.tid);
+      this.list_objetos[i].transacao = 0;
+      this.list_objetos[i].ativa = false;
+
+      this.logs.push(t_abortALL(w.tid));
+      this.removeTransacao(w.tid);
+
+      this.selTransacao();
+      this.operacao.transacao = "";
+      this.bloqueio.finalizar = false;
+      this.bloqueio.executar = false;
+
+      const tem_no_disco = this.log_disco.filter(f => f.operacao === 'write_item' && f.tid === w.tid);
+
+      if (tem_no_disco.length > 0) {
+        tem_no_disco.reverse();
+        tem_no_disco.forEach(function (o) {
+          o.valor = o.antes;
+          save_banco(o);
+        });
+        this.transacoes_desfeitas.push(t_desfeita(w));
+        this.timeouts.push(setTimeout(() => {
+          this.getDB();
+        }, (1000 * parseInt(this.segundos))));
+        const op = t_log_disco(tem_no_disco[tem_no_disco.length - 1]);
+        this.timeouts.push(setTimeout(() => {
+          this.setCache(op);
+        }, (2000 * parseInt(this.segundos))));
+      }
+
+    },
+    abortaTransacaoALL() {
       if (this.transacoes_ativas.length < 1) {
         return
       }
@@ -849,9 +895,7 @@ export default {
         }).indexOf(w.tid);
         this.list_objetos[i].transacao = 0;
         this.list_objetos[i].ativa = false;
-        if (insert_log) {
-          this.logs.push(t_abortALL(w.tid));
-        }
+
         this.removeTransacao(w.tid);
 
       }, this);
